@@ -13,6 +13,9 @@ export default {
       },
     },
     extend: {
+      fontFamily: {
+        raleway: ["Raleway", "sans-serif"],
+      },
       colors: {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
@@ -46,6 +49,12 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        kaya: {
+          olive: "hsl(var(--kaya-olive))",
+          dark: "hsl(var(--kaya-dark))",
+          light: "hsl(var(--kaya-light))",
+          warm: "hsl(var(--kaya-warm))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
