@@ -43,7 +43,7 @@ const GallerySection = () => {
                 architectural designs, each project reflects our commitment to
                 quality, innovation, and timeless style.
               </p>
-              <a href="#" className="kaya-btn inline-flex self-start items-center gap-3">
+              <a href="/properties" className="kaya-btn inline-flex self-start items-center gap-3">
                 <span>View 52 Photos</span>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
