@@ -1,4 +1,5 @@
 import Header from "@/components/Header";
+import Footer from "@/components/Footer";
 import HeroSection from "@/components/HeroSection";
 import ExpertsSection from "@/components/ExpertsSection";
 import PlansSection from "@/components/PlansSection";
@@ -20,6 +21,7 @@ const Index = () => {
       <LifestyleSection />
       <ScheduleSection />
       <ContactSection />
+      <Footer />
     </div>
   );
 };

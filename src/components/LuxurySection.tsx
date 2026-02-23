@@ -21,7 +21,7 @@ const LuxurySection = () => {
               spacious layouts, exquisite finishes, and contemporary design
               elements for an elevated living experience.
             </p>
-            <a href="#" className="kaya-btn mb-8 inline-flex">
+            <a href="/properties" className="kaya-btn mb-8 inline-flex">
               More Plans
             </a>
             <div className="mt-6">
