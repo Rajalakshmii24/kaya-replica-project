@@ -17,6 +17,7 @@ const navItems = [
   },
   { label: "Services", to: "/services" },
   { label: "Current Market", to: "/current-market" },
+  { label: "Buildings", to: "/buildings" },
   { label: "Blog", to: "/blog" },
   { label: "Contact", to: "/contact" },
 ];
