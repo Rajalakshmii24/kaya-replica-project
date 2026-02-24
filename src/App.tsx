@@ -12,6 +12,7 @@ import PropertyDetails from "./pages/PropertyDetails";
 import OffPlan from "./pages/OffPlan";
 import Secondary from "./pages/Secondary";
 import Services from "./pages/Services";
+import CurrentMarket from "./pages/CurrentMarket";
 import Blog from "./pages/Blog";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
@@ -41,6 +42,7 @@ const App = () => (
           <Route path="/offplan" element={<OffPlan />} />
           <Route path="/secondary" element={<Secondary />} />
           <Route path="/services" element={<Services />} />
+          <Route path="/current-market" element={<CurrentMarket />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="*" element={<NotFound />} />
