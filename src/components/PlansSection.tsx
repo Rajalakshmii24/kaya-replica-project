@@ -34,7 +34,7 @@ const PlansSection = () => {
             <p className="kaya-body text-sm uppercase tracking-[0.15em] mb-8">
               For Property Posting
             </p>
-            <a href="/properties" className="kaya-btn">
+            <a href="/plans" className="kaya-btn">
               More Plans
             </a>
           </div>

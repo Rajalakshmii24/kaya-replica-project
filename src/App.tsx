@@ -15,6 +15,9 @@ import Services from "./pages/Services";
 import CurrentMarket from "./pages/CurrentMarket";
 import Blog from "./pages/Blog";
 import Contact from "./pages/Contact";
+import Buildings from "./pages/Buildings";
+import Plans from "./pages/Plans";
+import Gallery from "./pages/Gallery";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -45,6 +48,9 @@ const App = () => (
           <Route path="/current-market" element={<CurrentMarket />} />
           <Route path="/blog" element={<Blog />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/buildings" element={<Buildings />} />
+          <Route path="/plans" element={<Plans />} />
+          <Route path="/gallery" element={<Gallery />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
