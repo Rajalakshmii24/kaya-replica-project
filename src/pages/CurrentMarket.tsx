@@ -1,436 +1,664 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import {
-  Search, SlidersHorizontal, ChevronDown, ChevronLeft, ChevronRight,
-  TrendingUp, TrendingDown, ArrowUpDown, Building2, Home as HomeIcon,
-  MapPin, Calendar, X, RotateCcw
+  Search, Users, Building2, BarChart3, CalendarDays, LayoutDashboard,
+  ChevronLeft, ChevronRight, Eye, Phone, Mail, RefreshCw,
+  TrendingUp, Loader2, Lock, LogOut, User, Home as HomeIcon,
+  Filter, X
 } from "lucide-react";
 import {
-  popularAreas, saleTransactions, rentalTransactions,
-  marketStats, developers, type Transaction, type RentalTransaction
-} from "@/data/marketData";
+  fetchListings, fetchLeads, fetchAgents, fetchDevelopers, fetchReminders,
+} from "@/lib/pixxi";
 
-const formatPrice = (n: number) =>
-  "AED " + n.toLocaleString("en-US");
+const CRM_PASSWORD = "kaya2024";
 
-const timePeriods = ["YTD", "7D", "1M", "3M", "6M", "1Y"];
-const propertyTypes = ["All", "Apartment", "Villa", "Plot", "Commercial"];
-const bedOptions = ["All", "Studio", "1 Bed", "2 Beds", "3 Beds", "4 Beds", "5+ Beds"];
-const statusOptions = ["All", "Ready", "Off-plan"];
-const soldByOptions = ["All", "Developer", "Resale"];
-const sortOptions = [
-  { label: "Newest", value: "newest" },
-  { label: "Oldest", value: "oldest" },
-  { label: "High price", value: "high" },
-  { label: "Low price", value: "low" },
-];
+type CrmTab = "dashboard" | "leads" | "listings" | "agents" | "reminders";
+
+const formatPrice = (n: number) => "AED " + n.toLocaleString("en-US");
 
 const CurrentMarket = () => {
-  const [activeTab, setActiveTab] = useState<"sales" | "rental">("sales");
-  const [timePeriod, setTimePeriod] = useState("7D");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [sortBy, setSortBy] = useState("newest");
-  const [showSortDropdown, setShowSortDropdown] = useState(false);
+  const [authenticated, setAuthenticated] = useState(false);
+  const [password, setPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
+
+  // CRM State
+  const [activeTab, setActiveTab] = useState<CrmTab>("dashboard");
+  const [loading, setLoading] = useState(false);
+
+  // Data
+  const [listings, setListings] = useState<any>(null);
+  const [leads, setLeads] = useState<any>(null);
+  const [agents, setAgents] = useState<any>(null);
+  const [reminders, setReminders] = useState<any>(null);
 
   // Filters
-  const [filterType, setFilterType] = useState("All");
-  const [filterBeds, setFilterBeds] = useState("All");
-  const [filterStatus, setFilterStatus] = useState("All");
-  const [filterSoldBy, setFilterSoldBy] = useState("All");
+  const [listingType, setListingType] = useState<"NEW" | "SELL" | "RENT">("SELL");
+  const [listingPage, setListingPage] = useState(1);
+  const [leadPage, setLeadPage] = useState(1);
+  const [leadStatus, setLeadStatus] = useState<"" | "ACTIVE" | "INACTIVE" | "DEAL">("");
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const resetFilters = () => {
-    setFilterType("All");
-    setFilterBeds("All");
-    setFilterStatus("All");
-    setFilterSoldBy("All");
-    setSearchQuery("");
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === CRM_PASSWORD) {
+      setAuthenticated(true);
+      setPasswordError("");
+    } else {
+      setPasswordError("Invalid password. Please try again.");
+    }
   };
 
-  const filteredSales = useMemo(() => {
-    let data = [...saleTransactions];
-    if (searchQuery) data = data.filter(t => t.location.toLowerCase().includes(searchQuery.toLowerCase()) || t.area.toLowerCase().includes(searchQuery.toLowerCase()));
-    if (filterType !== "All") data = data.filter(t => t.type === filterType);
-    if (filterBeds !== "All") data = data.filter(t => t.beds === filterBeds);
-    if (filterStatus !== "All") data = data.filter(t => t.status === filterStatus);
-    if (filterSoldBy !== "All") data = data.filter(t => t.soldBy === filterSoldBy);
-    if (sortBy === "newest") data.sort((a, b) => b.id - a.id);
-    if (sortBy === "oldest") data.sort((a, b) => a.id - b.id);
-    if (sortBy === "high") data.sort((a, b) => b.price - a.price);
-    if (sortBy === "low") data.sort((a, b) => a.price - b.price);
-    return data;
-  }, [searchQuery, filterType, filterBeds, filterStatus, filterSoldBy, sortBy]);
+  const loadDashboardData = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [listingsRes, leadsRes, agentsRes, remindersRes] = await Promise.all([
+        fetchListings({ listingType: "SELL", page: 1, size: 5 }),
+        fetchLeads({ page: 1, size: 5 }),
+        fetchAgents(),
+        fetchReminders({ page: 1, size: 5 }),
+      ]);
+      setListings(listingsRes);
+      setLeads(leadsRes);
+      setAgents(agentsRes);
+      setReminders(remindersRes);
+    } catch (err) {
+      console.error("Failed to load dashboard:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
-  const filteredRentals = useMemo(() => {
-    let data = [...rentalTransactions];
-    if (searchQuery) data = data.filter(t => t.location.toLowerCase().includes(searchQuery.toLowerCase()));
-    if (filterType !== "All") data = data.filter(t => t.type === filterType);
-    if (filterBeds !== "All") data = data.filter(t => t.beds === filterBeds);
-    return data;
-  }, [searchQuery, filterType, filterBeds]);
+  const loadListings = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetchListings({
+        listingType,
+        page: listingPage,
+        size: 20,
+        name: searchQuery || undefined,
+      });
+      setListings(res);
+    } catch (err) {
+      console.error("Failed to load listings:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [listingType, listingPage, searchQuery]);
 
-  const ITEMS_PER_PAGE = 10;
-  const currentSales = filteredSales.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-  const currentRentals = filteredRentals.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
-  const totalPages = Math.ceil((activeTab === "sales" ? filteredSales.length : filteredRentals.length) / ITEMS_PER_PAGE);
+  const loadLeads = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetchLeads({
+        page: leadPage,
+        size: 20,
+        status: leadStatus || undefined,
+      });
+      setLeads(res);
+    } catch (err) {
+      console.error("Failed to load leads:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, [leadPage, leadStatus]);
+
+  const loadAgents = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetchAgents();
+      setAgents(res);
+    } catch (err) {
+      console.error("Failed to load agents:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const loadReminders = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetchReminders({ page: 1, size: 50 });
+      setReminders(res);
+    } catch (err) {
+      console.error("Failed to load reminders:", err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!authenticated) return;
+    if (activeTab === "dashboard") loadDashboardData();
+    else if (activeTab === "listings") loadListings();
+    else if (activeTab === "leads") loadLeads();
+    else if (activeTab === "agents") loadAgents();
+    else if (activeTab === "reminders") loadReminders();
+  }, [authenticated, activeTab, loadDashboardData, loadListings, loadLeads, loadAgents, loadReminders]);
+
+  // LOGIN GATE
+  if (!authenticated) {
+    return (
+      <div className="w-full min-h-screen bg-background">
+        <Header />
+        <div className="min-h-screen flex items-center justify-center pt-20">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-md mx-4"
+          >
+            <div className="bg-card border border-border rounded-xl p-8 shadow-lg">
+              <div className="text-center mb-8">
+                <div className="w-16 h-16 bg-kaya-olive rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Lock size={28} className="text-primary-foreground" />
+                </div>
+                <h1 className="font-raleway text-2xl font-light text-foreground tracking-wide">CRM Access</h1>
+                <p className="font-raleway text-sm text-muted-foreground mt-2">Enter your password to access the CRM dashboard</p>
+              </div>
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <label className="block font-raleway text-xs text-muted-foreground uppercase tracking-wide mb-1.5">Password</label>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter CRM password"
+                    className="w-full px-4 py-3 bg-background border border-border rounded-lg font-raleway text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-kaya-gold"
+                    required
+                  />
+                </div>
+                {passwordError && (
+                  <p className="font-raleway text-xs text-red-500">{passwordError}</p>
+                )}
+                <button
+                  type="submit"
+                  className="w-full py-3 bg-kaya-olive text-primary-foreground font-raleway font-medium text-sm rounded-lg hover:bg-kaya-olive/90 transition-colors tracking-wide"
+                >
+                  Access CRM
+                </button>
+              </form>
+            </div>
+          </motion.div>
+        </div>
+        <Footer />
+      </div>
+    );
+  }
+
+  const listingsData = listings?.data?.list || [];
+  const listingsTotal = listings?.data?.totalSize || 0;
+  const leadsData = leads?.data?.list || [];
+  const leadsTotal = leads?.data?.total || 0;
+  const agentsData = agents?.data || agents || [];
+  const remindersData = reminders?.data?.list || reminders?.data || [];
+
+  const tabs: { key: CrmTab; label: string; icon: React.ReactNode }[] = [
+    { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+    { key: "leads", label: "Leads", icon: <Users size={18} /> },
+    { key: "listings", label: "Listings", icon: <Building2 size={18} /> },
+    { key: "agents", label: "Agents", icon: <User size={18} /> },
+    { key: "reminders", label: "Reminders", icon: <CalendarDays size={18} /> },
+  ];
 
   return (
     <div className="w-full min-h-screen bg-background">
       <Header />
 
-      {/* Hero / Search Bar */}
-      <section className="pt-24 pb-6 bg-kaya-olive">
-        <div className="max-w-7xl mx-auto px-4 md:px-8">
-          <h1 className="font-raleway font-light text-primary-foreground text-2xl md:text-3xl tracking-[0.1em] mb-6">
-            Dubai Real Estate Market
+      {/* Top Bar */}
+      <section className="pt-20 bg-kaya-olive">
+        <div className="max-w-7xl mx-auto px-4 md:px-8 py-4 flex items-center justify-between">
+          <h1 className="font-raleway font-light text-primary-foreground text-xl md:text-2xl tracking-[0.1em]">
+            Kaya CRM Dashboard
           </h1>
-
-          {/* Search Bar */}
-          <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => { setSearchQuery(e.target.value); setCurrentPage(1); }}
-                placeholder="Search by area, community or project..."
-                className="w-full pl-11 pr-4 py-3 bg-background text-foreground font-raleway text-sm rounded-md border border-border focus:outline-none focus:ring-1 focus:ring-kaya-gold"
-              />
-            </div>
-            <button
-              onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center gap-2 px-5 py-3 bg-background text-foreground font-raleway text-sm rounded-md border border-border hover:bg-muted transition-colors"
-            >
-              <SlidersHorizontal size={16} />
-              Filters
-            </button>
-            <button className="px-6 py-3 bg-kaya-gold text-kaya-olive font-raleway font-medium text-sm rounded-md hover:bg-kaya-gold/90 transition-colors">
-              Search
-            </button>
-          </div>
+          <button
+            onClick={() => setAuthenticated(false)}
+            className="flex items-center gap-2 text-primary-foreground/80 hover:text-primary-foreground font-raleway text-sm transition-colors"
+          >
+            <LogOut size={16} /> Logout
+          </button>
         </div>
-      </section>
 
-      {/* Filters Panel */}
-      {showFilters && (
-        <motion.section
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: "auto", opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          className="bg-card border-b border-border"
-        >
-          <div className="max-w-7xl mx-auto px-4 md:px-8 py-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="font-raleway font-medium text-foreground text-sm tracking-wide">Filters</h3>
-              <div className="flex gap-3">
-                <button onClick={resetFilters} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground font-raleway">
-                  <RotateCcw size={12} /> Reset
-                </button>
-                <button onClick={() => setShowFilters(false)} className="text-muted-foreground hover:text-foreground">
-                  <X size={16} />
-                </button>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* Property Type */}
-              <div>
-                <label className="block font-raleway text-xs text-muted-foreground mb-1.5 tracking-wide uppercase">Property Type</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {propertyTypes.map(t => (
-                    <button key={t} onClick={() => { setFilterType(t); setCurrentPage(1); }}
-                      className={`px-3 py-1.5 text-xs font-raleway rounded-md border transition-colors ${filterType === t ? "bg-kaya-olive text-primary-foreground border-kaya-olive" : "bg-background text-foreground border-border hover:bg-muted"}`}
-                    >{t}</button>
-                  ))}
-                </div>
-              </div>
-              {/* Beds */}
-              <div>
-                <label className="block font-raleway text-xs text-muted-foreground mb-1.5 tracking-wide uppercase">Beds</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {bedOptions.map(b => (
-                    <button key={b} onClick={() => { setFilterBeds(b); setCurrentPage(1); }}
-                      className={`px-3 py-1.5 text-xs font-raleway rounded-md border transition-colors ${filterBeds === b ? "bg-kaya-olive text-primary-foreground border-kaya-olive" : "bg-background text-foreground border-border hover:bg-muted"}`}
-                    >{b}</button>
-                  ))}
-                </div>
-              </div>
-              {/* Status */}
-              <div>
-                <label className="block font-raleway text-xs text-muted-foreground mb-1.5 tracking-wide uppercase">Status</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {statusOptions.map(s => (
-                    <button key={s} onClick={() => { setFilterStatus(s); setCurrentPage(1); }}
-                      className={`px-3 py-1.5 text-xs font-raleway rounded-md border transition-colors ${filterStatus === s ? "bg-kaya-olive text-primary-foreground border-kaya-olive" : "bg-background text-foreground border-border hover:bg-muted"}`}
-                    >{s}</button>
-                  ))}
-                </div>
-              </div>
-              {/* Sold By */}
-              <div>
-                <label className="block font-raleway text-xs text-muted-foreground mb-1.5 tracking-wide uppercase">Sold By</label>
-                <div className="flex flex-wrap gap-1.5">
-                  {soldByOptions.map(s => (
-                    <button key={s} onClick={() => { setFilterSoldBy(s); setCurrentPage(1); }}
-                      className={`px-3 py-1.5 text-xs font-raleway rounded-md border transition-colors ${filterSoldBy === s ? "bg-kaya-olive text-primary-foreground border-kaya-olive" : "bg-background text-foreground border-border hover:bg-muted"}`}
-                    >{s}</button>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </motion.section>
-      )}
-
-      {/* Area Tabs - Horizontal scrollable */}
-      <section className="border-b border-border bg-card overflow-x-auto">
-        <div className="max-w-7xl mx-auto px-4 md:px-8 flex items-center gap-1 py-2">
-          <button className="flex items-center text-muted-foreground hover:text-foreground p-1"><ChevronLeft size={16} /></button>
-          <div className="flex gap-1 overflow-x-auto no-scrollbar">
-            {popularAreas.slice(0, 10).map(area => (
+        {/* Tab Navigation */}
+        <div className="max-w-7xl mx-auto px-4 md:px-8">
+          <div className="flex gap-1 overflow-x-auto no-scrollbar pb-0">
+            {tabs.map((tab) => (
               <button
-                key={area.slug}
-                onClick={() => { setSearchQuery(area.name); setCurrentPage(1); }}
-                className="whitespace-nowrap px-3 py-2 text-xs font-raleway text-muted-foreground hover:text-foreground hover:bg-muted rounded-md transition-colors"
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-2 px-4 py-3 font-raleway text-sm whitespace-nowrap transition-colors rounded-t-lg ${
+                  activeTab === tab.key
+                    ? "bg-background text-foreground"
+                    : "text-primary-foreground/70 hover:text-primary-foreground"
+                }`}
               >
-                {area.name} ({area.transactions.toLocaleString()})
+                {tab.icon}
+                {tab.label}
               </button>
             ))}
           </div>
-          <button className="flex items-center text-muted-foreground hover:text-foreground p-1"><ChevronRight size={16} /></button>
         </div>
       </section>
 
-      <main className="max-w-7xl mx-auto px-4 md:px-8 py-8">
-        {/* Time Period + Stats */}
-        <div className="mb-8">
-          {/* Time period selector */}
-          <div className="flex items-center gap-1 mb-2">
-            {timePeriods.map(p => (
-              <button key={p} onClick={() => setTimePeriod(p)}
-                className={`px-3 py-1.5 text-xs font-raleway rounded-md transition-colors ${timePeriod === p ? "bg-kaya-olive text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-              >{p}</button>
-            ))}
-          </div>
-          <p className="font-raleway text-xs text-muted-foreground mb-6">(18 Feb, 2026 to 24 Feb, 2026)</p>
-
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-card border border-border rounded-lg p-5 text-center">
-              <p className="font-raleway text-xs text-muted-foreground tracking-wide uppercase mb-2">Median Price</p>
-              <p className="font-raleway font-medium text-foreground text-xl md:text-2xl">{formatPrice(marketStats.medianPrice)}</p>
-              <span className={`inline-flex items-center gap-1 mt-2 text-xs font-raleway font-medium ${marketStats.medianPriceChange >= 0 ? "text-green-600" : "text-red-500"}`}>
-                {marketStats.medianPriceChange >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                {marketStats.medianPriceChange >= 0 ? "+" : ""}{marketStats.medianPriceChange}%
-              </span>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-5 text-center">
-              <p className="font-raleway text-xs text-muted-foreground tracking-wide uppercase mb-2">Median Price /sqft</p>
-              <p className="font-raleway font-medium text-foreground text-xl md:text-2xl">AED {marketStats.medianPriceSqft.toLocaleString()}</p>
-              <span className={`inline-flex items-center gap-1 mt-2 text-xs font-raleway font-medium ${marketStats.medianPriceSqftChange >= 0 ? "text-green-600" : "text-red-500"}`}>
-                {marketStats.medianPriceSqftChange >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                {marketStats.medianPriceSqftChange}%
-              </span>
-            </div>
-            <div className="bg-card border border-border rounded-lg p-5 text-center">
-              <p className="font-raleway text-xs text-muted-foreground tracking-wide uppercase mb-2">Transactions</p>
-              <p className="font-raleway font-medium text-foreground text-xl md:text-2xl">{marketStats.totalTransactions.toLocaleString()}</p>
-              <span className={`inline-flex items-center gap-1 mt-2 text-xs font-raleway font-medium ${marketStats.transactionsChange >= 0 ? "text-green-600" : "text-red-500"}`}>
-                {marketStats.transactionsChange >= 0 ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-                {marketStats.transactionsChange}%
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Sales / Rental Tabs */}
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex gap-1">
-            <button onClick={() => { setActiveTab("sales"); setCurrentPage(1); }}
-              className={`px-5 py-2 font-raleway text-sm rounded-md transition-colors ${activeTab === "sales" ? "bg-kaya-olive text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-            >Sales</button>
-            <button onClick={() => { setActiveTab("rental"); setCurrentPage(1); }}
-              className={`px-5 py-2 font-raleway text-sm rounded-md transition-colors ${activeTab === "rental" ? "bg-kaya-olive text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-            >Rental</button>
-          </div>
-
-          {/* Sort */}
-          <div className="relative">
-            <button onClick={() => setShowSortDropdown(!showSortDropdown)}
-              className="flex items-center gap-2 px-3 py-2 text-xs font-raleway text-muted-foreground hover:text-foreground border border-border rounded-md"
-            >
-              <ArrowUpDown size={14} />
-              {sortOptions.find(s => s.value === sortBy)?.label}
-              <ChevronDown size={12} />
-            </button>
-            {showSortDropdown && (
-              <div className="absolute right-0 top-full mt-1 bg-card border border-border rounded-md shadow-lg z-10 min-w-[140px]">
-                {sortOptions.map(opt => (
-                  <button key={opt.value} onClick={() => { setSortBy(opt.value); setShowSortDropdown(false); }}
-                    className={`block w-full text-left px-4 py-2 text-xs font-raleway hover:bg-muted transition-colors ${sortBy === opt.value ? "text-foreground font-medium" : "text-muted-foreground"}`}
-                  >{opt.label}</button>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Sales Table */}
-        {activeTab === "sales" && (
-          <div className="border border-border rounded-lg overflow-hidden">
-            {/* Table Header */}
-            <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-5 py-3 bg-muted/50 border-b border-border">
-              <div>
-                <p className="font-raleway text-xs font-medium text-foreground">Location</p>
-                <p className="font-raleway text-[10px] text-muted-foreground">Status</p>
-              </div>
-              <div className="text-center">
-                <p className="font-raleway text-xs font-medium text-foreground">Price</p>
-              </div>
-              <div className="text-center">
-                <p className="font-raleway text-xs font-medium text-foreground">Specs</p>
-              </div>
-              <div className="text-center">
-                <p className="font-raleway text-xs font-medium text-foreground">Date</p>
-                <p className="font-raleway text-[10px] text-muted-foreground">Sold by</p>
-              </div>
-            </div>
-            {/* Table Rows */}
-            {currentSales.length === 0 && (
-              <div className="px-5 py-12 text-center">
-                <p className="font-raleway text-sm text-muted-foreground">No transactions match your filters.</p>
-              </div>
-            )}
-            {currentSales.map((t) => (
-              <div key={t.id} className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr] gap-2 md:gap-4 px-5 py-4 border-b border-border hover:bg-muted/30 transition-colors">
-                <div>
-                  <p className="font-raleway text-sm text-foreground font-medium">{t.location}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <span className={`inline-block px-2 py-0.5 text-[10px] font-raleway rounded ${t.status === "Off-plan" ? "bg-amber-100 text-amber-800" : "bg-green-100 text-green-800"}`}>
-                      {t.status}
-                    </span>
-                    <span className="text-[10px] font-raleway text-muted-foreground">{t.type}</span>
-                    {t.isNew && <span className="inline-block px-1.5 py-0.5 text-[10px] font-raleway bg-blue-100 text-blue-800 rounded">New</span>}
-                  </div>
-                </div>
-                <div className="text-left md:text-center">
-                  <p className="font-raleway text-sm font-medium text-foreground">{formatPrice(t.price)}</p>
-                  <p className="font-raleway text-[10px] text-muted-foreground">AED {t.pricePerSqft.toLocaleString()} /sqft</p>
-                </div>
-                <div className="text-left md:text-center">
-                  <p className="font-raleway text-sm text-foreground">{t.sqft.toLocaleString()} sqft</p>
-                  <p className="font-raleway text-[10px] text-muted-foreground">{t.beds}</p>
-                </div>
-                <div className="text-left md:text-center">
-                  <p className="font-raleway text-sm text-foreground">{t.date}</p>
-                  <p className="font-raleway text-[10px] text-muted-foreground">{t.soldBy}</p>
-                </div>
-              </div>
-            ))}
+      <main className="max-w-7xl mx-auto px-4 md:px-8 py-6">
+        {loading && (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="animate-spin text-kaya-olive" size={32} />
+            <span className="ml-3 font-raleway text-muted-foreground">Loading data...</span>
           </div>
         )}
 
-        {/* Rental Table */}
-        {activeTab === "rental" && (
-          <div className="border border-border rounded-lg overflow-hidden">
-            <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-5 py-3 bg-muted/50 border-b border-border">
-              <div><p className="font-raleway text-xs font-medium text-foreground">Location</p></div>
-              <div className="text-center"><p className="font-raleway text-xs font-medium text-foreground">Specs</p></div>
-              <div className="text-center">
-                <p className="font-raleway text-xs font-medium text-foreground">Rental (AED)</p>
-                <p className="font-raleway text-[10px] text-muted-foreground">Yield</p>
-              </div>
-              <div className="text-center"><p className="font-raleway text-xs font-medium text-foreground">Duration</p></div>
-            </div>
-            {currentRentals.length === 0 && (
-              <div className="px-5 py-12 text-center">
-                <p className="font-raleway text-sm text-muted-foreground">No rentals match your filters.</p>
-              </div>
-            )}
-            {currentRentals.map((t) => (
-              <div key={t.id} className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr] gap-2 md:gap-4 px-5 py-4 border-b border-border hover:bg-muted/30 transition-colors">
-                <div>
-                  <p className="font-raleway text-sm text-foreground font-medium">{t.location}</p>
-                  <p className="text-[10px] font-raleway text-muted-foreground">{t.type}</p>
-                </div>
-                <div className="text-left md:text-center">
-                  <p className="font-raleway text-sm text-foreground">{t.beds}</p>
-                  <p className="font-raleway text-[10px] text-muted-foreground">{t.sqft.toLocaleString()} sqft</p>
-                </div>
-                <div className="text-left md:text-center">
-                  <p className="font-raleway text-sm font-medium text-foreground">{t.rental.toLocaleString()}</p>
-                  {t.rentalYield && (
-                    <span className="text-[10px] font-raleway text-green-600 font-medium">+{t.rentalYield}%</span>
-                  )}
-                </div>
-                <div className="text-left md:text-center">
-                  <p className="font-raleway text-xs text-foreground">{t.startDate} – {t.endDate}</p>
-                  <p className="font-raleway text-[10px] text-muted-foreground">{t.duration}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+        {!loading && activeTab === "dashboard" && (
+          <DashboardView
+            listings={listingsData}
+            listingsTotal={listingsTotal}
+            leads={leadsData}
+            leadsTotal={leadsTotal}
+            agents={agentsData}
+            reminders={remindersData}
+            onRefresh={loadDashboardData}
+          />
         )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex items-center justify-center gap-2 mt-6">
-            <button onClick={() => setCurrentPage(Math.max(1, currentPage - 1))} disabled={currentPage === 1}
-              className="p-2 text-muted-foreground hover:text-foreground disabled:opacity-30">
-              <ChevronLeft size={16} />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-              <button key={p} onClick={() => setCurrentPage(p)}
-                className={`w-8 h-8 text-xs font-raleway rounded-md transition-colors ${currentPage === p ? "bg-kaya-olive text-primary-foreground" : "text-muted-foreground hover:bg-muted"}`}
-              >{p}</button>
-            ))}
-            <button onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))} disabled={currentPage === totalPages}
-              className="p-2 text-muted-foreground hover:text-foreground disabled:opacity-30">
-              <ChevronRight size={16} />
-            </button>
-          </div>
+        {!loading && activeTab === "listings" && (
+          <ListingsView
+            data={listingsData}
+            total={listingsTotal}
+            page={listingPage}
+            setPage={setListingPage}
+            listingType={listingType}
+            setListingType={setListingType}
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            onRefresh={loadListings}
+          />
         )}
 
-        {/* Popular Searches */}
-        <section className="mt-16 mb-12">
-          <h2 className="font-raleway font-light text-foreground text-xl tracking-[0.1em] mb-6">
-            Popular Searches in 2025
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {popularAreas.map(area => (
-              <button key={area.slug}
-                onClick={() => { setSearchQuery(area.name); setCurrentPage(1); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-                className="flex items-center justify-between px-4 py-3 bg-card border border-border rounded-lg hover:bg-muted transition-colors text-left group"
-              >
-                <div className="flex items-center gap-3">
-                  <MapPin size={14} className="text-muted-foreground group-hover:text-kaya-gold transition-colors" />
-                  <span className="font-raleway text-sm text-foreground">{area.name}</span>
-                </div>
-                <span className="font-raleway text-xs text-muted-foreground">{area.transactions.toLocaleString()} Sales</span>
-              </button>
-            ))}
-          </div>
-        </section>
+        {!loading && activeTab === "leads" && (
+          <LeadsView
+            data={leadsData}
+            total={leadsTotal}
+            page={leadPage}
+            setPage={setLeadPage}
+            status={leadStatus}
+            setStatus={setLeadStatus}
+            onRefresh={loadLeads}
+          />
+        )}
 
-        {/* CTA Section */}
-        <section className="bg-kaya-olive rounded-lg p-8 md:p-12 text-center mb-12">
-          <h2 className="font-raleway font-light text-primary-foreground text-xl md:text-2xl tracking-[0.1em] mb-3">
-            Ready to make your move?
-          </h2>
-          <p className="font-raleway font-light text-primary-foreground/70 text-sm mb-6">
-            You've seen the numbers for Dubai. Let's turn insights into action.
-          </p>
-          <a href="/contact" className="kaya-btn-outline inline-block">
-            Get in Touch
-          </a>
-        </section>
+        {!loading && activeTab === "agents" && (
+          <AgentsView data={agentsData} onRefresh={loadAgents} />
+        )}
+
+        {!loading && activeTab === "reminders" && (
+          <RemindersView data={remindersData} onRefresh={loadReminders} />
+        )}
       </main>
 
       <Footer />
     </div>
   );
 };
+
+// ========== DASHBOARD VIEW ==========
+function DashboardView({ listings, listingsTotal, leads, leadsTotal, agents, reminders, onRefresh }: any) {
+  const agentCount = Array.isArray(agents) ? agents.length : 0;
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h2 className="font-raleway text-lg font-medium text-foreground">Overview</h2>
+        <button onClick={onRefresh} className="flex items-center gap-2 text-sm font-raleway text-muted-foreground hover:text-foreground">
+          <RefreshCw size={14} /> Refresh
+        </button>
+      </div>
+
+      {/* KPI Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <KpiCard icon={<Building2 size={20} />} label="Total Listings" value={listingsTotal.toLocaleString()} />
+        <KpiCard icon={<Users size={20} />} label="Total Leads" value={leadsTotal.toLocaleString()} />
+        <KpiCard icon={<User size={20} />} label="Agents" value={agentCount.toString()} />
+        <KpiCard icon={<CalendarDays size={20} />} label="Reminders" value={Array.isArray(reminders) ? reminders.length.toString() : "0"} />
+      </div>
+
+      {/* Recent Listings */}
+      <div className="bg-card border border-border rounded-lg p-5">
+        <h3 className="font-raleway text-sm font-medium text-foreground mb-4">Recent Listings</h3>
+        <div className="space-y-3">
+          {listings.slice(0, 5).map((item: any) => (
+            <div key={item.id} className="flex items-center gap-4 p-3 bg-muted/30 rounded-lg">
+              {item.photos?.[0] && (
+                <img src={item.photos[0]} alt={item.title} className="w-16 h-12 object-cover rounded" />
+              )}
+              <div className="flex-1 min-w-0">
+                <p className="font-raleway text-sm font-medium text-foreground truncate">{item.title}</p>
+                <p className="font-raleway text-xs text-muted-foreground">{item.region} · {item.cityName}</p>
+              </div>
+              <p className="font-raleway text-sm font-medium text-foreground">{formatPrice(item.price)}</p>
+            </div>
+          ))}
+          {listings.length === 0 && <p className="font-raleway text-sm text-muted-foreground">No listings found.</p>}
+        </div>
+      </div>
+
+      {/* Recent Leads */}
+      <div className="bg-card border border-border rounded-lg p-5">
+        <h3 className="font-raleway text-sm font-medium text-foreground mb-4">Recent Leads</h3>
+        <div className="space-y-3">
+          {leads.slice(0, 5).map((lead: any) => (
+            <div key={lead.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+              <div>
+                <p className="font-raleway text-sm font-medium text-foreground">{lead.name || "Unknown"}</p>
+                <p className="font-raleway text-xs text-muted-foreground">{lead.clientType} · {lead.status}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {lead.phone && <Phone size={14} className="text-muted-foreground" />}
+                {lead.email && <Mail size={14} className="text-muted-foreground" />}
+                <span className={`px-2 py-0.5 text-[10px] font-raleway rounded ${
+                  lead.status === "ACTIVE" ? "bg-green-100 text-green-800" :
+                  lead.status === "DEAL" ? "bg-blue-100 text-blue-800" :
+                  "bg-gray-100 text-gray-600"
+                }`}>{lead.status}</span>
+              </div>
+            </div>
+          ))}
+          {leads.length === 0 && <p className="font-raleway text-sm text-muted-foreground">No leads found.</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function KpiCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+  return (
+    <div className="bg-card border border-border rounded-lg p-5">
+      <div className="flex items-center gap-3 mb-3">
+        <div className="w-10 h-10 bg-kaya-olive/10 rounded-lg flex items-center justify-center text-kaya-olive">{icon}</div>
+      </div>
+      <p className="font-raleway text-xs text-muted-foreground uppercase tracking-wide">{label}</p>
+      <p className="font-raleway text-2xl font-medium text-foreground mt-1">{value}</p>
+    </div>
+  );
+}
+
+// ========== LISTINGS VIEW ==========
+function ListingsView({ data, total, page, setPage, listingType, setListingType, searchQuery, setSearchQuery, onRefresh }: any) {
+  const totalPages = Math.ceil(total / 20);
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-raleway text-lg font-medium text-foreground">
+          Property Listings <span className="text-muted-foreground text-sm">({total})</span>
+        </h2>
+        <button onClick={onRefresh} className="flex items-center gap-2 text-sm font-raleway text-muted-foreground hover:text-foreground">
+          <RefreshCw size={14} /> Refresh
+        </button>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap items-center gap-3">
+        <div className="flex gap-1">
+          {(["SELL", "RENT", "NEW"] as const).map((t) => (
+            <button
+              key={t}
+              onClick={() => { setListingType(t); setPage(1); }}
+              className={`px-4 py-2 text-xs font-raleway rounded-md transition-colors ${
+                listingType === t ? "bg-kaya-olive text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {t === "NEW" ? "Off Plan" : t === "SELL" ? "For Sale" : "For Rent"}
+            </button>
+          ))}
+        </div>
+        <div className="relative flex-1 min-w-[200px]">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && onRefresh()}
+            placeholder="Search listings..."
+            className="w-full pl-9 pr-4 py-2 bg-background border border-border rounded-md font-raleway text-sm focus:outline-none focus:ring-1 focus:ring-kaya-gold"
+          />
+        </div>
+      </div>
+
+      {/* Listing Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {data.map((item: any) => (
+          <div key={item.id} className="bg-card border border-border rounded-lg overflow-hidden hover:shadow-md transition-shadow">
+            <div className="relative h-44">
+              {item.photos?.[0] ? (
+                <img src={item.photos[0]} alt={item.title} className="w-full h-full object-cover" />
+              ) : (
+                <div className="w-full h-full bg-muted flex items-center justify-center">
+                  <Building2 size={32} className="text-muted-foreground" />
+                </div>
+              )}
+              <span className="absolute top-3 left-3 px-2 py-1 text-[10px] font-raleway font-medium bg-kaya-olive text-primary-foreground rounded">
+                {item.listingType}
+              </span>
+            </div>
+            <div className="p-4">
+              <h3 className="font-raleway text-sm font-medium text-foreground truncate">{item.title}</h3>
+              <p className="font-raleway text-xs text-muted-foreground mt-1">{item.region}, {item.cityName}</p>
+              <div className="flex items-center justify-between mt-3">
+                <p className="font-raleway text-sm font-semibold text-foreground">{formatPrice(item.price)}</p>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground font-raleway">
+                  {item.bedRooms > 0 && <span>{item.bedRooms} BR</span>}
+                  {item.size > 0 && <span>{item.size.toLocaleString()} sqft</span>}
+                </div>
+              </div>
+              {item.agent && (
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
+                  {item.agent.avatar && (
+                    <img src={item.agent.avatar} alt={item.agent.name} className="w-6 h-6 rounded-full object-cover" />
+                  )}
+                  <span className="font-raleway text-xs text-muted-foreground">{item.agent.name}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {data.length === 0 && (
+        <div className="text-center py-12">
+          <Building2 size={40} className="mx-auto text-muted-foreground mb-3" />
+          <p className="font-raleway text-sm text-muted-foreground">No listings found.</p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-4">
+          <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}
+            className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-40">
+            <ChevronLeft size={16} />
+          </button>
+          <span className="font-raleway text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+          <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages}
+            className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-40">
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ========== LEADS VIEW ==========
+function LeadsView({ data, total, page, setPage, status, setStatus, onRefresh }: any) {
+  const totalPages = Math.ceil(total / 20);
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-raleway text-lg font-medium text-foreground">
+          Leads <span className="text-muted-foreground text-sm">({total})</span>
+        </h2>
+        <button onClick={onRefresh} className="flex items-center gap-2 text-sm font-raleway text-muted-foreground hover:text-foreground">
+          <RefreshCw size={14} /> Refresh
+        </button>
+      </div>
+
+      {/* Status filters */}
+      <div className="flex gap-1">
+        {[{ label: "All", value: "" }, { label: "Active", value: "ACTIVE" }, { label: "Inactive", value: "INACTIVE" }, { label: "Deal", value: "DEAL" }].map((s) => (
+          <button
+            key={s.value}
+            onClick={() => { setStatus(s.value); setPage(1); }}
+            className={`px-4 py-2 text-xs font-raleway rounded-md transition-colors ${
+              status === s.value ? "bg-kaya-olive text-primary-foreground" : "bg-muted text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {s.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Leads Table */}
+      <div className="border border-border rounded-lg overflow-hidden">
+        <div className="hidden md:grid grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-2 px-5 py-3 bg-muted/50 border-b border-border">
+          <p className="font-raleway text-xs font-medium text-foreground">Name</p>
+          <p className="font-raleway text-xs font-medium text-foreground">Type</p>
+          <p className="font-raleway text-xs font-medium text-foreground">Status</p>
+          <p className="font-raleway text-xs font-medium text-foreground">Agent</p>
+          <p className="font-raleway text-xs font-medium text-foreground">Date</p>
+        </div>
+        {data.map((lead: any) => (
+          <div key={lead.id} className="grid grid-cols-1 md:grid-cols-[2fr_1fr_1fr_1fr_1fr] gap-2 px-5 py-4 border-b border-border hover:bg-muted/30">
+            <div>
+              <p className="font-raleway text-sm font-medium text-foreground">{lead.name || "—"}</p>
+              <p className="font-raleway text-xs text-muted-foreground">{lead.email || lead.phone || "No contact"}</p>
+            </div>
+            <p className="font-raleway text-sm text-foreground">{lead.clientType || "—"}</p>
+            <div>
+              <span className={`px-2 py-0.5 text-[10px] font-raleway rounded ${
+                lead.status === "ACTIVE" ? "bg-green-100 text-green-800" :
+                lead.status === "DEAL" ? "bg-blue-100 text-blue-800" :
+                "bg-gray-100 text-gray-600"
+              }`}>{lead.status}</span>
+            </div>
+            <p className="font-raleway text-xs text-muted-foreground">{lead.agentInfo?.name || "—"}</p>
+            <p className="font-raleway text-xs text-muted-foreground">{lead.createTime?.split(" ")[0] || "—"}</p>
+          </div>
+        ))}
+        {data.length === 0 && (
+          <div className="px-5 py-12 text-center">
+            <p className="font-raleway text-sm text-muted-foreground">No leads found.</p>
+          </div>
+        )}
+      </div>
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 pt-4">
+          <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1}
+            className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-40">
+            <ChevronLeft size={16} />
+          </button>
+          <span className="font-raleway text-sm text-muted-foreground">Page {page} of {totalPages}</span>
+          <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages}
+            className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-40">
+            <ChevronRight size={16} />
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ========== AGENTS VIEW ==========
+function AgentsView({ data, onRefresh }: any) {
+  const agentsList = Array.isArray(data) ? data : [];
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-raleway text-lg font-medium text-foreground">
+          Agents <span className="text-muted-foreground text-sm">({agentsList.length})</span>
+        </h2>
+        <button onClick={onRefresh} className="flex items-center gap-2 text-sm font-raleway text-muted-foreground hover:text-foreground">
+          <RefreshCw size={14} /> Refresh
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {agentsList.map((agent: any, idx: number) => (
+          <div key={agent.id || idx} className="bg-card border border-border rounded-lg p-5 flex items-start gap-4">
+            {agent.avatar ? (
+              <img src={agent.avatar} alt={agent.name} className="w-14 h-14 rounded-full object-cover" />
+            ) : (
+              <div className="w-14 h-14 bg-kaya-olive/10 rounded-full flex items-center justify-center">
+                <User size={24} className="text-kaya-olive" />
+              </div>
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="font-raleway text-sm font-medium text-foreground">{agent.name}</p>
+              {agent.email && <p className="font-raleway text-xs text-muted-foreground truncate">{agent.email}</p>}
+              {agent.phone && <p className="font-raleway text-xs text-muted-foreground">{agent.phone}</p>}
+              {agent.brn && <p className="font-raleway text-[10px] text-muted-foreground mt-1">BRN: {agent.brn}</p>}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {agentsList.length === 0 && (
+        <div className="text-center py-12">
+          <User size={40} className="mx-auto text-muted-foreground mb-3" />
+          <p className="font-raleway text-sm text-muted-foreground">No agents found.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ========== REMINDERS VIEW ==========
+function RemindersView({ data, onRefresh }: any) {
+  const remindersList = Array.isArray(data) ? data : [];
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-raleway text-lg font-medium text-foreground">
+          Reminders <span className="text-muted-foreground text-sm">({remindersList.length})</span>
+        </h2>
+        <button onClick={onRefresh} className="flex items-center gap-2 text-sm font-raleway text-muted-foreground hover:text-foreground">
+          <RefreshCw size={14} /> Refresh
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {remindersList.map((item: any, idx: number) => (
+          <div key={item.id || idx} className="bg-card border border-border rounded-lg p-4 flex items-center justify-between">
+            <div>
+              <p className="font-raleway text-sm font-medium text-foreground">{item.title || "Untitled"}</p>
+              {item.description && <p className="font-raleway text-xs text-muted-foreground mt-1">{item.description}</p>}
+              <div className="flex items-center gap-3 mt-2">
+                {item.reminderType && (
+                  <span className={`px-2 py-0.5 text-[10px] font-raleway rounded ${
+                    item.reminderType === "TASK" ? "bg-amber-100 text-amber-800" :
+                    item.reminderType === "EVENT" ? "bg-purple-100 text-purple-800" :
+                    "bg-blue-100 text-blue-800"
+                  }`}>{item.reminderType}</span>
+                )}
+                {item.reminder_start_time && (
+                  <span className="font-raleway text-[10px] text-muted-foreground">{item.reminder_start_time}</span>
+                )}
+              </div>
+            </div>
+            {item.status && (
+              <span className={`px-2 py-1 text-[10px] font-raleway rounded ${
+                item.status === "COMPLETED" ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-600"
+              }`}>{item.status}</span>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {remindersList.length === 0 && (
+        <div className="text-center py-12">
+          <CalendarDays size={40} className="mx-auto text-muted-foreground mb-3" />
+          <p className="font-raleway text-sm text-muted-foreground">No reminders found.</p>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default CurrentMarket;
