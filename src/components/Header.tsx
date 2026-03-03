@@ -18,7 +18,7 @@ const navItems = [
   { label: "Services", to: "/services" },
   { label: "CRM", to: "/current-market" },
   { label: "Buildings", to: "/buildings" },
-  { label: "Blog", to: "/blog" },
+  { label: "Catalogs", to: "/catalogs" },
   { label: "Contact", to: "/contact" },
 ];
 

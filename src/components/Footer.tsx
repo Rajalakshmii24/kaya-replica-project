@@ -8,15 +8,13 @@ const quickLinks = [
   { label: "Properties", to: "/properties" },
   { label: "Off Plan", to: "/offplan" },
   { label: "Services", to: "/services" },
-  { label: "Blog", to: "/blog" },
+  { label: "Catalogs", to: "/catalogs" },
   { label: "Contact", to: "/contact" },
 ];
 
 const socialLinks = [
-  { label: "Facebook", url: "https://www.facebook.com/kayarealestate.ae" },
-  { label: "Instagram", url: "https://www.instagram.com/kayarealestate/" },
-  { label: "LinkedIn", url: "https://www.linkedin.com/company/kaya-real-estate/" },
-  { label: "YouTube", url: "https://www.youtube.com/@kayarealestate" },
+  { label: "Instagram", url: "https://www.instagram.com/kayarealestate_?igsh=MWdzN3VpN2ZyaWdpYg==" },
+  { label: "LinkedIn", url: "https://www.linkedin.com/company/kaya-real-estate-dxb/" },
 ];
 
 const Footer = () => {
@@ -62,10 +60,15 @@ const Footer = () => {
             <div className="flex flex-col gap-4">
               <div className="flex items-start gap-3">
                 <MapPin size={18} className="opacity-80 mt-0.5 shrink-0" />
-                <p className="font-raleway font-light text-sm opacity-80 leading-relaxed">
-                  Office 1404, Aspect Tower,<br />
+                <a
+                  href="https://www.google.com/maps/search/1607,+Silver+Building,+Business+Bay,+Dubai,+UAE"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-raleway font-light text-sm opacity-80 leading-relaxed hover:opacity-100 transition-opacity"
+                >
+                  1607, Silver Building,<br />
                   Business Bay, Dubai, UAE
-                </p>
+                </a>
               </div>
               <a href="tel:+97142SEQ1234" className="flex items-center gap-3 font-raleway font-light text-sm opacity-80 hover:opacity-100 transition-opacity">
                 <Phone size={16} className="shrink-0" />
@@ -85,7 +88,7 @@ const Footer = () => {
             </h3>
             <div className="w-full h-40 mb-6 overflow-hidden">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3613.168!2d55.2644!3d25.1865!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjXCsDExJzExLjQiTiA1NcKwMTUnNTEuOCJF!5e0!3m2!1sen!2sae!4v1234567890"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3613.168!2d55.2644!3d25.1865!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3e5f6f5b3e8c2f1d%3A0x2b1a3c4d5e6f7a8b!2sSilver%20Tower%2C%20Business%20Bay%2C%20Dubai!5e0!3m2!1sen!2sae!4v1700000000000"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}

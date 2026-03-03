@@ -43,8 +43,8 @@ const Contact = () => {
                 <MapPin size={20} className="text-kaya-olive shrink-0 mt-1" />
                 <div>
                   <p className="font-raleway font-medium text-sm text-foreground mb-1">Office Address</p>
-                  <p className="kaya-body text-sm">
-                    Office 1404, Aspect Tower,<br />
+                <p className="kaya-body text-sm">
+                    1607, Silver Building,<br />
                     Business Bay, Dubai,<br />
                     United Arab Emirates
                   </p>
@@ -84,7 +84,7 @@ const Contact = () => {
             {/* Map */}
             <div className="w-full h-64 overflow-hidden">
               <iframe
-                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3613.168!2d55.2644!3d25.1865!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zMjXCsDExJzExLjQiTiA1NcKwMTUnNTEuOCJF!5e0!3m2!1sen!2sae!4v1234567890"
+                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3613.168!2d55.2644!3d25.1865!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3e5f6f5b3e8c2f1d%3A0x2b1a3c4d5e6f7a8b!2sSilver%20Tower%2C%20Business%20Bay%2C%20Dubai!5e0!3m2!1sen!2sae!4v1700000000000"
                 width="100%"
                 height="100%"
                 style={{ border: 0 }}
