@@ -13,7 +13,7 @@ import OffPlan from "./pages/OffPlan";
 import Secondary from "./pages/Secondary";
 import Services from "./pages/Services";
 import CurrentMarket from "./pages/CurrentMarket";
-import Blog from "./pages/Blog";
+import Catalogs from "./pages/Catalogs";
 import Contact from "./pages/Contact";
 import Buildings from "./pages/Buildings";
 import Plans from "./pages/Plans";
@@ -46,7 +46,7 @@ const App = () => (
           <Route path="/secondary" element={<Secondary />} />
           <Route path="/services" element={<Services />} />
           <Route path="/current-market" element={<CurrentMarket />} />
-          <Route path="/blog" element={<Blog />} />
+          <Route path="/catalogs" element={<Catalogs />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/buildings" element={<Buildings />} />
           <Route path="/plans" element={<Plans />} />
