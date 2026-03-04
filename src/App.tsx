@@ -11,6 +11,8 @@ import Properties from "./pages/Properties";
 import PropertyDetails from "./pages/PropertyDetails";
 import OffPlan from "./pages/OffPlan";
 import Secondary from "./pages/Secondary";
+import Rent from "./pages/Rent";
+import Sell from "./pages/Sell";
 import Services from "./pages/Services";
 import CurrentMarket from "./pages/CurrentMarket";
 import Catalogs from "./pages/Catalogs";
@@ -44,6 +46,8 @@ const App = () => (
           <Route path="/property/:id" element={<PropertyDetails />} />
           <Route path="/offplan" element={<OffPlan />} />
           <Route path="/secondary" element={<Secondary />} />
+          <Route path="/rent" element={<Rent />} />
+          <Route path="/sell" element={<Sell />} />
           <Route path="/services" element={<Services />} />
           <Route path="/current-market" element={<CurrentMarket />} />
           <Route path="/catalogs" element={<Catalogs />} />

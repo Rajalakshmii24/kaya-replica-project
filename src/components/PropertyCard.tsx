@@ -6,12 +6,20 @@ export interface Property {
   title: string;
   location: string;
   price: string;
+  priceMonthly?: string;
   beds: number;
   baths: number;
   sqft: number;
   image: string;
   type: string;
   status: string;
+  developer?: string;
+  handoverDate?: string;
+  paymentPlan?: string;
+  projectStatus?: string;
+  furnished?: string;
+  readyToMove?: boolean;
+  cheques?: number;
 }
 
 const PropertyCard = ({ property }: { property: Property }) => {
