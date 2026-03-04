@@ -13,6 +13,8 @@ const navItems = [
       { label: "All Properties", to: "/properties" },
       { label: "Off Plan", to: "/offplan" },
       { label: "Secondary Market", to: "/secondary" },
+      { label: "Rent", to: "/rent" },
+      { label: "Sell", to: "/sell" },
     ],
   },
   { label: "Services", to: "/services" },

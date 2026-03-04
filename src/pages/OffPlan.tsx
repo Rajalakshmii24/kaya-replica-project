@@ -1,35 +1,207 @@
+import { useState, useMemo } from "react";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import PageHero from "@/components/PageHero";
-import PropertyCard from "@/components/PropertyCard";
 import { properties } from "@/data/properties";
+import { Link } from "react-router-dom";
+import { Bed, Bath, Maximize, CalendarDays, Building2, CreditCard, ChevronDown, Search, LayoutGrid, List, SlidersHorizontal } from "lucide-react";
+
+const LOCATIONS = ["All Locations", "Downtown Dubai", "Dubai Marina", "Palm Jumeirah", "Business Bay", "Creek Harbour", "MBR City", "Meydan", "JVC", "Dubai Hills"];
+const TYPES = ["All Types", "Apartment", "Villa", "Townhouse", "Penthouse"];
+const DEVELOPERS = ["All Developers", "Emaar", "Damac", "Sobha", "Azizi", "Nakheel", "Meraas"];
+const BEDROOMS = ["Any", "Studio", "1", "2", "3", "4+"];
+const HANDOVER_YEARS = ["Any Year", "2025", "2026", "2027", "2028"];
+const PROJECT_STATUSES = ["All Status", "New Launch", "Under Construction", "Ready"];
+const SORT_OPTIONS = ["Newest", "Price: Low to High", "Price: High to Low", "Handover Date"];
+
+const parsePrice = (p: string) => parseInt(p.replace(/[^0-9]/g, "")) || 0;
 
 const OffPlan = () => {
-  const offplanProperties = properties.filter((p) => p.status === "offplan");
+  const allOffplan = properties.filter((p) => p.status === "offplan");
+
+  const [location, setLocation] = useState("All Locations");
+  const [type, setType] = useState("All Types");
+  const [developer, setDeveloper] = useState("All Developers");
+  const [bedrooms, setBedrooms] = useState("Any");
+  const [handoverYear, setHandoverYear] = useState("Any Year");
+  const [projectStatus, setProjectStatus] = useState("All Status");
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [sortBy, setSortBy] = useState("Newest");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [showFilters, setShowFilters] = useState(true);
+
+  const filtered = useMemo(() => {
+    let result = [...allOffplan];
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase();
+      result = result.filter((p) => p.title.toLowerCase().includes(q) || p.location.toLowerCase().includes(q) || p.developer?.toLowerCase().includes(q));
+    }
+    if (location !== "All Locations") result = result.filter((p) => p.location === location);
+    if (type !== "All Types") result = result.filter((p) => p.type === type);
+    if (developer !== "All Developers") result = result.filter((p) => p.developer === developer);
+    if (projectStatus !== "All Status") result = result.filter((p) => p.projectStatus === projectStatus);
+    if (bedrooms !== "Any") {
+      if (bedrooms === "Studio") result = result.filter((p) => p.beds === 0);
+      else if (bedrooms === "4+") result = result.filter((p) => p.beds >= 4);
+      else result = result.filter((p) => p.beds === parseInt(bedrooms));
+    }
+    if (handoverYear !== "Any Year") result = result.filter((p) => p.handoverDate?.includes(handoverYear));
+    if (priceMin) result = result.filter((p) => parsePrice(p.price) >= parseInt(priceMin));
+    if (priceMax) result = result.filter((p) => parsePrice(p.price) <= parseInt(priceMax));
+
+    switch (sortBy) {
+      case "Price: Low to High": result.sort((a, b) => parsePrice(a.price) - parsePrice(b.price)); break;
+      case "Price: High to Low": result.sort((a, b) => parsePrice(b.price) - parsePrice(a.price)); break;
+      case "Handover Date": result.sort((a, b) => (a.handoverDate || "").localeCompare(b.handoverDate || "")); break;
+    }
+
+    return result;
+  }, [allOffplan, location, type, developer, bedrooms, handoverYear, projectStatus, priceMin, priceMax, sortBy, searchQuery]);
+
+  const resetFilters = () => {
+    setLocation("All Locations"); setType("All Types"); setDeveloper("All Developers");
+    setBedrooms("Any"); setHandoverYear("Any Year"); setProjectStatus("All Status");
+    setPriceMin(""); setPriceMax(""); setSearchQuery("");
+  };
+
+  const SelectFilter = ({ label, value, onChange, options }: { label: string; value: string; onChange: (v: string) => void; options: string[] }) => (
+    <div>
+      <label className="block font-raleway font-light text-xs tracking-[0.1em] uppercase text-muted-foreground mb-2">{label}</label>
+      <div className="relative">
+        <select value={value} onChange={(e) => onChange(e.target.value)} className="w-full appearance-none bg-background border border-border px-4 py-3 font-raleway font-light text-sm text-foreground focus:outline-none focus:border-accent pr-10">
+          {options.map((o) => <option key={o} value={o}>{o}</option>)}
+        </select>
+        <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+      </div>
+    </div>
+  );
 
   return (
     <div className="w-full min-h-screen bg-background">
       <Header />
-      <PageHero title="Off Plan Projects" subtitle="Invest in Dubai's Future" image="/images/downtown-living.webp" />
+      <PageHero title="Off Plan Projects" subtitle="Invest in Dubai's Future Developments" image="/images/downtown-living.webp" />
 
-      <section className="max-w-7xl mx-auto px-8 py-16 lg:py-24">
-        <div className="max-w-2xl mb-12">
-          <h2 className="kaya-heading text-2xl text-foreground mb-6">New Developments</h2>
-          <p className="kaya-body text-sm">
-            Discover exclusive off-plan projects from Dubai's top developers. Benefit from attractive payment plans,
-            early-bird pricing, and high capital appreciation potential.
-          </p>
+      <section className="max-w-7xl mx-auto px-6 md:px-8 py-12 lg:py-20">
+        {/* Search & Controls Bar */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-8">
+          <div className="relative flex-1 max-w-md w-full">
+            <Search size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search projects, developers, locations..."
+              className="w-full pl-11 pr-4 py-3 border border-border bg-background font-raleway font-light text-sm focus:outline-none focus:border-accent"
+            />
+          </div>
+          <div className="flex items-center gap-3">
+            <button onClick={() => setShowFilters(!showFilters)} className="flex items-center gap-2 px-4 py-3 border border-border font-raleway font-light text-xs tracking-[0.1em] uppercase hover:bg-secondary transition-colors">
+              <SlidersHorizontal size={14} /> Filters
+            </button>
+            <div className="flex border border-border">
+              <button onClick={() => setViewMode("grid")} className={`p-3 ${viewMode === "grid" ? "bg-accent text-accent-foreground" : "hover:bg-secondary"} transition-colors`}><LayoutGrid size={16} /></button>
+              <button onClick={() => setViewMode("list")} className={`p-3 ${viewMode === "list" ? "bg-accent text-accent-foreground" : "hover:bg-secondary"} transition-colors`}><List size={16} /></button>
+            </div>
+            <div className="relative">
+              <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="appearance-none bg-background border border-border px-4 py-3 pr-10 font-raleway font-light text-xs tracking-[0.1em] uppercase focus:outline-none">
+                {SORT_OPTIONS.map((o) => <option key={o} value={o}>{o}</option>)}
+              </select>
+              <ChevronDown size={14} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+            </div>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {offplanProperties.map((p) => (
-            <PropertyCard key={p.id} property={p} />
-          ))}
-        </div>
+        {/* Filters Panel */}
+        {showFilters && (
+          <div className="border border-border p-6 mb-8">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+              <SelectFilter label="Location" value={location} onChange={setLocation} options={LOCATIONS} />
+              <SelectFilter label="Property Type" value={type} onChange={setType} options={TYPES} />
+              <SelectFilter label="Developer" value={developer} onChange={setDeveloper} options={DEVELOPERS} />
+              <SelectFilter label="Bedrooms" value={bedrooms} onChange={setBedrooms} options={BEDROOMS} />
+              <SelectFilter label="Handover Year" value={handoverYear} onChange={setHandoverYear} options={HANDOVER_YEARS} />
+              <SelectFilter label="Project Status" value={projectStatus} onChange={setProjectStatus} options={PROJECT_STATUSES} />
+              <div>
+                <label className="block font-raleway font-light text-xs tracking-[0.1em] uppercase text-muted-foreground mb-2">Min Price (AED)</label>
+                <input type="number" value={priceMin} onChange={(e) => setPriceMin(e.target.value)} placeholder="Min" className="w-full bg-background border border-border px-4 py-3 font-raleway font-light text-sm focus:outline-none focus:border-accent" />
+              </div>
+              <div>
+                <label className="block font-raleway font-light text-xs tracking-[0.1em] uppercase text-muted-foreground mb-2">Max Price (AED)</label>
+                <input type="number" value={priceMax} onChange={(e) => setPriceMax(e.target.value)} placeholder="Max" className="w-full bg-background border border-border px-4 py-3 font-raleway font-light text-sm focus:outline-none focus:border-accent" />
+              </div>
+            </div>
+            <button onClick={resetFilters} className="font-raleway font-light text-xs tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-colors underline">
+              Reset All Filters
+            </button>
+          </div>
+        )}
 
-        {offplanProperties.length === 0 && (
+        {/* Results Count */}
+        <p className="font-raleway font-light text-sm text-muted-foreground mb-6">
+          Showing <span className="text-foreground font-medium">{filtered.length}</span> off-plan {filtered.length === 1 ? "project" : "projects"}
+        </p>
+
+        {/* Property Grid/List */}
+        {viewMode === "grid" ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {filtered.map((p) => (
+              <Link to={`/property/${p.id}`} key={p.id} className="group block border border-border hover:border-accent transition-colors">
+                <div className="relative overflow-hidden">
+                  <img src={p.image} alt={p.title} className="w-full aspect-[4/3] object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                  {p.projectStatus && (
+                    <span className="absolute top-4 left-4 bg-accent text-accent-foreground px-3 py-1 font-raleway font-medium text-xs tracking-[0.1em] uppercase">
+                      {p.projectStatus}
+                    </span>
+                  )}
+                </div>
+                <div className="p-5">
+                  {p.developer && <p className="font-raleway font-light text-xs tracking-[0.15em] uppercase text-muted-foreground mb-1">{p.developer}</p>}
+                  <h3 className="font-raleway font-light tracking-[0.1em] text-foreground text-base mb-1">{p.title}</h3>
+                  <p className="font-raleway font-light text-xs text-muted-foreground mb-3">{p.location}</p>
+                  <p className="font-raleway font-medium text-foreground text-lg mb-4">Starting from {p.price}</p>
+                  <div className="flex flex-wrap gap-3 text-muted-foreground border-t border-border pt-4">
+                    <span className="flex items-center gap-1 text-xs font-raleway"><Bed size={13} /> {p.beds === 0 ? "Studio" : `${p.beds} BR`}</span>
+                    <span className="flex items-center gap-1 text-xs font-raleway"><Maximize size={13} /> {p.sqft} sqft</span>
+                    {p.handoverDate && <span className="flex items-center gap-1 text-xs font-raleway"><CalendarDays size={13} /> {p.handoverDate}</span>}
+                    {p.paymentPlan && <span className="flex items-center gap-1 text-xs font-raleway"><CreditCard size={13} /> {p.paymentPlan}</span>}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col gap-4">
+            {filtered.map((p) => (
+              <Link to={`/property/${p.id}`} key={p.id} className="group flex flex-col md:flex-row border border-border hover:border-accent transition-colors">
+                <div className="relative overflow-hidden md:w-72 flex-shrink-0">
+                  <img src={p.image} alt={p.title} className="w-full h-48 md:h-full object-cover transition-transform duration-500 group-hover:scale-105" loading="lazy" />
+                  {p.projectStatus && (
+                    <span className="absolute top-4 left-4 bg-accent text-accent-foreground px-3 py-1 font-raleway font-medium text-xs tracking-[0.1em] uppercase">
+                      {p.projectStatus}
+                    </span>
+                  )}
+                </div>
+                <div className="p-5 flex-1">
+                  {p.developer && <p className="font-raleway font-light text-xs tracking-[0.15em] uppercase text-muted-foreground mb-1">{p.developer}</p>}
+                  <h3 className="font-raleway font-light tracking-[0.1em] text-foreground text-lg mb-1">{p.title}</h3>
+                  <p className="font-raleway font-light text-xs text-muted-foreground mb-2">{p.location}</p>
+                  <p className="font-raleway font-medium text-foreground text-lg mb-3">Starting from {p.price}</p>
+                  <div className="flex flex-wrap gap-4 text-muted-foreground">
+                    <span className="flex items-center gap-1 text-xs font-raleway"><Bed size={13} /> {p.beds === 0 ? "Studio" : `${p.beds} BR`}</span>
+                    <span className="flex items-center gap-1 text-xs font-raleway"><Maximize size={13} /> {p.sqft} sqft</span>
+                    {p.handoverDate && <span className="flex items-center gap-1 text-xs font-raleway"><CalendarDays size={13} /> {p.handoverDate}</span>}
+                    {p.paymentPlan && <span className="flex items-center gap-1 text-xs font-raleway"><CreditCard size={13} /> {p.paymentPlan}</span>}
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        )}
+
+        {filtered.length === 0 && (
           <p className="text-center font-raleway font-light text-muted-foreground py-16">
-            No off-plan properties available at the moment.
+            No off-plan projects match your filters. Try adjusting your search criteria.
           </p>
         )}
       </section>
