@@ -2,18 +2,18 @@ import { useState } from "react";
 import CrmSidebar, { CrmModule } from "./CrmSidebar";
 import CrmTopNav from "./CrmTopNav";
 import DashboardView from "./views/DashboardView";
+import AreasView from "./views/AreasView";
+import DevelopersView from "./views/DevelopersView";
+import NewProjectsView from "./views/NewProjectsView";
+import SellListingsView from "./views/SellListingsView";
+import RentListingsView from "./views/RentListingsView";
+import OwnersView from "./views/OwnersView";
 import LeadsView from "./views/LeadsView";
-import ContactsView from "./views/ContactsView";
-import DealsView from "./views/DealsView";
-import ListingsView from "./views/ListingsView";
+import DatabaseView from "./views/DatabaseView";
+import TransactionsView from "./views/TransactionsView";
+import KpiReportsView from "./views/KpiReportsView";
 import AgentsView from "./views/AgentsView";
-import ActivitiesView from "./views/ActivitiesView";
-import TasksView from "./views/TasksView";
-import ReportsView from "./views/ReportsView";
-import AnalyticsView from "./views/AnalyticsView";
 import CalendarView from "./views/CalendarView";
-import RemindersView from "./views/RemindersView";
-import MapView from "./views/MapView";
 import SettingsView from "./views/SettingsView";
 
 interface CrmLayoutProps {
@@ -28,18 +28,25 @@ const CrmLayout = ({ onLogout, userEmail }: CrmLayoutProps) => {
   const renderModule = () => {
     switch (activeModule) {
       case "dashboard": return <DashboardView onNavigate={setActiveModule} />;
-      case "leads": return <LeadsView />;
-      case "contacts": return <ContactsView />;
-      case "deals": return <DealsView />;
-      case "listings": return <ListingsView />;
+      case "areas": return <AreasView />;
+      case "developers": return <DevelopersView />;
+      case "new-projects": return <NewProjectsView />;
+      case "sell-listings": return <SellListingsView />;
+      case "rent-listings": return <RentListingsView />;
+      case "owners": return <OwnersView />;
+      case "leads":
+      case "leads-buy": return <LeadsView initialTab="buy" />;
+      case "leads-rent": return <LeadsView initialTab="rent" />;
+      case "leads-portals": return <LeadsView initialTab="portals" />;
+      case "leads-add": return <LeadsView initialTab="add" />;
+      case "database": return <DatabaseView />;
+      case "transactions":
+      case "transactions-add": return <TransactionsView showAdd={activeModule === "transactions-add"} />;
+      case "kpi-contacts": return <KpiReportsView initialTab="contacts" />;
+      case "kpi-viewings": return <KpiReportsView initialTab="viewings" />;
+      case "kpi-insight": return <KpiReportsView initialTab="insight" />;
       case "agents": return <AgentsView />;
-      case "activities": return <ActivitiesView />;
-      case "tasks": return <TasksView />;
-      case "reports": return <ReportsView />;
-      case "analytics": return <AnalyticsView />;
       case "calendar": return <CalendarView />;
-      case "reminders": return <RemindersView />;
-      case "map": return <MapView />;
       case "settings": return <SettingsView />;
       default: return <DashboardView onNavigate={setActiveModule} />;
     }
