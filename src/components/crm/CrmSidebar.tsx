@@ -1,17 +1,17 @@
 import {
-  LayoutDashboard, Users, Building2, User, CalendarDays,
-  Briefcase, ListChecks, BarChart3, PieChart, Activity,
-  FileText, MapPin, ChevronDown, ChevronRight, Settings,
-  Plus, Phone, Home, Tag, Target, Workflow, Clock,
-  Bell, Mail, Globe, Database, Shield, HelpCircle,
+  LayoutDashboard, MapPin, Building, FolderPlus, Tag, Home,
+  Users, UserPlus, Database, Receipt, BarChart3, User,
+  CalendarDays, Settings, ChevronDown, ChevronRight, HelpCircle, Plus,
 } from "lucide-react";
 import { useState } from "react";
 
 export type CrmModule =
-  | "dashboard" | "leads" | "contacts" | "deals"
-  | "listings" | "agents" | "activities" | "tasks"
-  | "reports" | "analytics" | "calendar" | "reminders"
-  | "map" | "settings";
+  | "dashboard" | "areas" | "developers" | "new-projects"
+  | "sell-listings" | "rent-listings" | "owners"
+  | "leads" | "leads-buy" | "leads-rent" | "leads-portals" | "leads-add"
+  | "database" | "transactions" | "transactions-add"
+  | "kpi-contacts" | "kpi-viewings" | "kpi-insight"
+  | "agents" | "calendar" | "settings";
 
 interface SidebarItem {
   key: CrmModule;
@@ -23,43 +23,54 @@ interface SidebarItem {
 
 const sidebarItems: SidebarItem[] = [
   { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
+  { key: "areas", label: "Areas", icon: <MapPin size={18} /> },
+  { key: "developers", label: "Developers", icon: <Building size={18} /> },
+  { key: "new-projects", label: "New Projects", icon: <FolderPlus size={18} /> },
+  {
+    key: "sell-listings", label: "Sell Listings", icon: <Tag size={18} />,
+    children: [
+      { key: "sell-listings", label: "Sell List" },
+    ],
+  },
+  {
+    key: "rent-listings", label: "Rent Listings", icon: <Home size={18} />,
+    children: [
+      { key: "rent-listings", label: "Rent List" },
+    ],
+  },
+  {
+    key: "owners", label: "Owners", icon: <UserPlus size={18} />,
+    children: [
+      { key: "owners", label: "Owner List" },
+    ],
+  },
   {
     key: "leads", label: "Leads", icon: <Users size={18} />, badge: "New",
     children: [
-      { key: "leads", label: "All Leads" },
-      { key: "contacts", label: "Contacts" },
+      { key: "leads-buy", label: "Buy Leads" },
+      { key: "leads-rent", label: "Rent Leads" },
+      { key: "leads-portals", label: "Portals Leads" },
+      { key: "leads-add", label: "Add Lead" },
+    ],
+  },
+  { key: "database", label: "Database", icon: <Database size={18} /> },
+  {
+    key: "transactions", label: "Transactions", icon: <Receipt size={18} />,
+    children: [
+      { key: "transactions", label: "Transaction List" },
+      { key: "transactions-add", label: "Add Transaction" },
     ],
   },
   {
-    key: "deals", label: "Deals", icon: <Briefcase size={18} />,
+    key: "kpi-contacts", label: "KPI Reports", icon: <BarChart3 size={18} />,
     children: [
-      { key: "deals", label: "Pipeline" },
-    ],
-  },
-  {
-    key: "listings", label: "Properties", icon: <Building2 size={18} />,
-    children: [
-      { key: "listings", label: "All Listings" },
-      { key: "map", label: "Map View" },
+      { key: "kpi-contacts", label: "Contacts" },
+      { key: "kpi-viewings", label: "Viewings" },
+      { key: "kpi-insight", label: "Insight Board" },
     ],
   },
   { key: "agents", label: "Agents", icon: <User size={18} /> },
-  {
-    key: "activities", label: "Activities", icon: <Activity size={18} />,
-    children: [
-      { key: "activities", label: "Activity Log" },
-      { key: "tasks", label: "Tasks" },
-      { key: "calendar", label: "Calendar" },
-      { key: "reminders", label: "Reminders" },
-    ],
-  },
-  {
-    key: "reports", label: "Reports", icon: <FileText size={18} />,
-    children: [
-      { key: "reports", label: "Summary" },
-      { key: "analytics", label: "Analytics" },
-    ],
-  },
+  { key: "calendar", label: "Calendar", icon: <CalendarDays size={18} /> },
   { key: "settings", label: "Settings", icon: <Settings size={18} /> },
 ];
 
@@ -70,7 +81,7 @@ interface CrmSidebarProps {
 }
 
 const CrmSidebar = ({ activeModule, onModuleChange, collapsed }: CrmSidebarProps) => {
-  const [expandedGroups, setExpandedGroups] = useState<string[]>(["leads", "activities", "reports", "deals", "listings"]);
+  const [expandedGroups, setExpandedGroups] = useState<string[]>(["leads", "kpi-contacts"]);
 
   const toggleGroup = (key: string) => {
     setExpandedGroups((prev) =>
@@ -86,14 +97,13 @@ const CrmSidebar = ({ activeModule, onModuleChange, collapsed }: CrmSidebarProps
         collapsed ? "w-16" : "w-60"
       }`}
     >
-      {/* Logo area */}
+      {/* Logo */}
       <div className="h-14 flex items-center px-4 border-b border-border">
-        {!collapsed && (
+        {!collapsed ? (
           <span className="font-raleway font-medium text-sm text-foreground tracking-widest uppercase">
             Kaya CRM
           </span>
-        )}
-        {collapsed && (
+        ) : (
           <span className="font-raleway font-bold text-lg text-foreground mx-auto">K</span>
         )}
       </div>
@@ -102,7 +112,7 @@ const CrmSidebar = ({ activeModule, onModuleChange, collapsed }: CrmSidebarProps
       {!collapsed && (
         <div className="px-3 py-3 border-b border-border space-y-1.5">
           <button
-            onClick={() => onModuleChange("leads")}
+            onClick={() => onModuleChange("leads-add")}
             className="w-full flex items-center gap-2 px-3 py-2 bg-kaya-olive text-primary-foreground rounded-lg font-raleway text-xs font-medium hover:bg-kaya-olive/90 transition-colors"
           >
             <Plus size={14} />
@@ -110,25 +120,25 @@ const CrmSidebar = ({ activeModule, onModuleChange, collapsed }: CrmSidebarProps
           </button>
           <div className="flex gap-1.5">
             <button
-              onClick={() => onModuleChange("listings")}
+              onClick={() => onModuleChange("sell-listings")}
               className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-muted text-muted-foreground rounded-md font-raleway text-[10px] font-medium hover:text-foreground hover:bg-muted/80 transition-colors"
             >
-              <Building2 size={12} />
-              Property
+              <Tag size={12} />
+              Sell
             </button>
             <button
-              onClick={() => onModuleChange("tasks")}
+              onClick={() => onModuleChange("rent-listings")}
               className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-muted text-muted-foreground rounded-md font-raleway text-[10px] font-medium hover:text-foreground hover:bg-muted/80 transition-colors"
             >
-              <ListChecks size={12} />
-              Task
+              <Home size={12} />
+              Rent
             </button>
             <button
-              onClick={() => onModuleChange("calendar")}
+              onClick={() => onModuleChange("new-projects")}
               className="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 bg-muted text-muted-foreground rounded-md font-raleway text-[10px] font-medium hover:text-foreground hover:bg-muted/80 transition-colors"
             >
-              <CalendarDays size={12} />
-              Event
+              <FolderPlus size={12} />
+              Project
             </button>
           </div>
         </div>
@@ -137,13 +147,13 @@ const CrmSidebar = ({ activeModule, onModuleChange, collapsed }: CrmSidebarProps
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-2">
         {sidebarItems.map((item) => (
-          <div key={item.key}>
+          <div key={item.key + item.label}>
             {item.children ? (
               <>
                 <button
                   onClick={() => {
                     if (collapsed) {
-                      onModuleChange(item.key);
+                      onModuleChange(item.children![0].key);
                     } else {
                       toggleGroup(item.key);
                     }
@@ -211,7 +221,7 @@ const CrmSidebar = ({ activeModule, onModuleChange, collapsed }: CrmSidebarProps
         ))}
       </nav>
 
-      {/* Footer Help */}
+      {/* Footer */}
       {!collapsed && (
         <div className="px-3 py-3 border-t border-border">
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/30">

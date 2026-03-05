@@ -97,12 +97,12 @@ const DashboardView = ({ onNavigate }: DashboardViewProps) => {
   ];
 
   const quickActions = [
-    { icon: <Users size={16} />, label: "Add Lead", module: "leads" as CrmModule },
-    { icon: <Building2 size={16} />, label: "Add Property", module: "listings" as CrmModule },
-    { icon: <Phone size={16} />, label: "Log Call", module: "activities" as CrmModule },
+    { icon: <Users size={16} />, label: "Add Lead", module: "leads-add" as CrmModule },
+    { icon: <Building2 size={16} />, label: "Add Property", module: "sell-listings" as CrmModule },
+    { icon: <Phone size={16} />, label: "Log Call", module: "leads-buy" as CrmModule },
     { icon: <CalendarDays size={16} />, label: "Schedule", module: "calendar" as CrmModule },
-    { icon: <Eye size={16} />, label: "View Map", module: "map" as CrmModule },
-    { icon: <Activity size={16} />, label: "Activity", module: "activities" as CrmModule },
+    { icon: <Eye size={16} />, label: "KPI Reports", module: "kpi-insight" as CrmModule },
+    { icon: <Activity size={16} />, label: "Transactions", module: "transactions" as CrmModule },
   ];
 
   return (
@@ -206,7 +206,7 @@ const DashboardView = ({ onNavigate }: DashboardViewProps) => {
         <div className="bg-card border border-border rounded-lg">
           <div className="flex items-center justify-between p-4 border-b border-border">
             <h3 className="font-raleway text-sm font-medium text-foreground">Recent Leads</h3>
-            <button onClick={() => onNavigate("leads")} className="flex items-center gap-1 text-[10px] font-raleway text-kaya-olive hover:underline">
+            <button onClick={() => onNavigate("leads-buy")} className="flex items-center gap-1 text-[10px] font-raleway text-kaya-olive hover:underline">
               View All <ArrowRight size={10} />
             </button>
           </div>
@@ -239,7 +239,7 @@ const DashboardView = ({ onNavigate }: DashboardViewProps) => {
         <div className="bg-card border border-border rounded-lg">
           <div className="flex items-center justify-between p-4 border-b border-border">
             <h3 className="font-raleway text-sm font-medium text-foreground">Recent Properties</h3>
-            <button onClick={() => onNavigate("listings")} className="flex items-center gap-1 text-[10px] font-raleway text-kaya-olive hover:underline">
+            <button onClick={() => onNavigate("sell-listings")} className="flex items-center gap-1 text-[10px] font-raleway text-kaya-olive hover:underline">
               View All <ArrowRight size={10} />
             </button>
           </div>
@@ -270,7 +270,7 @@ const DashboardView = ({ onNavigate }: DashboardViewProps) => {
         <div className="bg-card border border-border rounded-lg">
           <div className="flex items-center justify-between p-4 border-b border-border">
             <h3 className="font-raleway text-sm font-medium text-foreground">Upcoming</h3>
-            <button onClick={() => onNavigate("reminders")} className="flex items-center gap-1 text-[10px] font-raleway text-kaya-olive hover:underline">
+            <button onClick={() => onNavigate("calendar")} className="flex items-center gap-1 text-[10px] font-raleway text-kaya-olive hover:underline">
               View All <ArrowRight size={10} />
             </button>
           </div>
@@ -300,7 +300,7 @@ const DashboardView = ({ onNavigate }: DashboardViewProps) => {
       <div className="bg-card border border-border rounded-lg">
         <div className="flex items-center justify-between p-5 border-b border-border">
           <h3 className="font-raleway text-sm font-medium text-foreground">Agent Overview</h3>
-          <button onClick={() => onNavigate("agents")} className="flex items-center gap-1 text-xs font-raleway text-kaya-olive hover:underline">
+          <button onClick={() => onNavigate("agents" as CrmModule)} className="flex items-center gap-1 text-xs font-raleway text-kaya-olive hover:underline">
             View All <ArrowRight size={12} />
           </button>
         </div>
