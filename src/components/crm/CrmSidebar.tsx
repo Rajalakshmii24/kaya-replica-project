@@ -7,7 +7,7 @@ import { useState } from "react";
 
 export type CrmModule =
   | "dashboard" | "areas" | "developers" | "new-projects"
-  | "sell-listings" | "rent-listings" | "owners"
+  | "sell-listings" | "sell-listings-add" | "rent-listings" | "rent-listings-add" | "owners"
   | "leads" | "leads-buy" | "leads-rent" | "leads-portals" | "leads-add"
   | "database" | "transactions" | "transactions-add"
   | "kpi-contacts" | "kpi-viewings" | "kpi-insight"
@@ -30,12 +30,14 @@ const sidebarItems: SidebarItem[] = [
     key: "sell-listings", label: "Sell Listings", icon: <Tag size={18} />,
     children: [
       { key: "sell-listings", label: "Sell List" },
+      { key: "sell-listings-add", label: "Add Sell" },
     ],
   },
   {
     key: "rent-listings", label: "Rent Listings", icon: <Home size={18} />,
     children: [
       { key: "rent-listings", label: "Rent List" },
+      { key: "rent-listings-add", label: "Add Rent" },
     ],
   },
   {

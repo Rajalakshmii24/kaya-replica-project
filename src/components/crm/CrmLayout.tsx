@@ -7,6 +7,7 @@ import DevelopersView from "./views/DevelopersView";
 import NewProjectsView from "./views/NewProjectsView";
 import SellListingsView from "./views/SellListingsView";
 import RentListingsView from "./views/RentListingsView";
+import AddListingForm from "./views/AddListingForm";
 import OwnersView from "./views/OwnersView";
 import LeadsView from "./views/LeadsView";
 import DatabaseView from "./views/DatabaseView";
@@ -31,8 +32,10 @@ const CrmLayout = ({ onLogout, userEmail }: CrmLayoutProps) => {
       case "areas": return <AreasView />;
       case "developers": return <DevelopersView />;
       case "new-projects": return <NewProjectsView />;
-      case "sell-listings": return <SellListingsView />;
-      case "rent-listings": return <RentListingsView />;
+      case "sell-listings": return <SellListingsView onNavigate={setActiveModule} />;
+      case "sell-listings-add": return <AddListingForm type="SELL" onSave={() => setActiveModule("sell-listings")} onCancel={() => setActiveModule("sell-listings")} />;
+      case "rent-listings": return <RentListingsView onNavigate={setActiveModule} />;
+      case "rent-listings-add": return <AddListingForm type="RENT" onSave={() => setActiveModule("rent-listings")} onCancel={() => setActiveModule("rent-listings")} />;
       case "owners": return <OwnersView />;
       case "leads":
       case "leads-buy": return <LeadsView initialTab="buy" />;
