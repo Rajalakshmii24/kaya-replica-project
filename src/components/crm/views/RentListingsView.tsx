@@ -1,16 +1,20 @@
 import { useEffect, useState, useCallback } from "react";
 import { Home, Search, Plus, Loader2, Eye, Edit, Trash2, ChevronLeft, ChevronRight, Building2, Download } from "lucide-react";
 import { fetchListings } from "@/lib/pixxi";
+import { CrmModule } from "../CrmSidebar";
 
 const formatPrice = (n: number) => "AED " + n.toLocaleString("en-US");
 
-const RentListingsView = () => {
+interface RentListingsViewProps {
+  onNavigate: (module: CrmModule) => void;
+}
+
+const RentListingsView = ({ onNavigate }: RentListingsViewProps) => {
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<any>(null);
   const [page, setPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortType, setSortType] = useState<"ASC" | "DESC">("DESC");
-  const [showAdd, setShowAdd] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -36,7 +40,7 @@ const RentListingsView = () => {
         </div>
         <div className="flex items-center gap-2">
           <button className="flex items-center gap-2 px-3 py-2 bg-card border border-border rounded-lg text-xs font-raleway text-muted-foreground hover:text-foreground"><Download size={14} /> Export</button>
-          <button onClick={() => setShowAdd(true)} className="flex items-center gap-2 px-4 py-2 bg-kaya-olive text-primary-foreground rounded-lg text-xs font-raleway font-medium hover:bg-kaya-olive/90"><Plus size={14} /> Add Rent</button>
+          <button onClick={() => onNavigate("rent-listings-add")} className="flex items-center gap-2 px-4 py-2 bg-kaya-olive text-primary-foreground rounded-lg text-xs font-raleway font-medium hover:bg-kaya-olive/90"><Plus size={14} /> Add Rent</button>
         </div>
       </div>
 
@@ -107,26 +111,6 @@ const RentListingsView = () => {
             <button onClick={() => setPage(Math.max(1, page - 1))} disabled={page === 1} className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-40"><ChevronLeft size={16} /></button>
             <span className="font-raleway text-sm text-muted-foreground">Page {page} / {totalPages}</span>
             <button onClick={() => setPage(Math.min(totalPages, page + 1))} disabled={page === totalPages} className="p-2 rounded-md border border-border hover:bg-muted disabled:opacity-40"><ChevronRight size={16} /></button>
-          </div>
-        </div>
-      )}
-
-      {showAdd && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/50">
-          <div className="bg-card border border-border rounded-xl w-full max-w-lg mx-4 p-6 shadow-xl max-h-[90vh] overflow-y-auto">
-            <h2 className="font-raleway text-lg font-medium text-foreground mb-4">Add Rent Listing</h2>
-            <div className="space-y-4">
-              {["Property Title", "Location / Area", "Annual Rent (AED)", "Bedrooms", "Bathrooms", "Size (sqft)", "Furnishing Status", "Cheques"].map((label) => (
-                <div key={label}>
-                  <label className="block font-raleway text-xs text-muted-foreground uppercase tracking-wide mb-1">{label}</label>
-                  <input className="w-full px-4 py-2.5 bg-background border border-border rounded-lg font-raleway text-sm focus:outline-none focus:ring-1 focus:ring-kaya-olive/50" />
-                </div>
-              ))}
-            </div>
-            <div className="flex items-center justify-end gap-3 mt-6">
-              <button onClick={() => setShowAdd(false)} className="px-4 py-2 font-raleway text-sm text-muted-foreground hover:text-foreground">Cancel</button>
-              <button onClick={() => setShowAdd(false)} className="px-4 py-2 bg-kaya-olive text-primary-foreground rounded-lg font-raleway text-sm font-medium hover:bg-kaya-olive/90">Save Listing</button>
-            </div>
           </div>
         </div>
       )}
