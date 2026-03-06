@@ -2,11 +2,12 @@ import { useState, useRef } from "react";
 import {
   Info, FileText, Image, Globe, ChevronLeft, ChevronRight, Save,
   MapPin, User, UserPlus, FileInput, Calendar as CalendarIcon,
-  Upload, X, Link, CheckSquare, Loader2, Home as HomeIcon,
+  Upload, X, Link, CheckSquare, Loader2, Home as HomeIcon, Plus, Search,
 } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 type ListingType = "RENT" | "SELL";
@@ -26,7 +27,8 @@ const PROPERTY_TYPES = [
 
 const FURNITURE_OPTIONS = ["Furnished", "Semi-furnished", "Unfurnished"];
 const SOURCE_OPTIONS = ["Direct Owner", "Agent Referral", "Portal", "Walk-in", "Phone Inquiry", "Website", "Social Media"];
-const CHEQUE_OPTIONS = Array.from({ length: 10 }, (_, i) => String(i + 1));
+const CHEQUE_OPTIONS = Array.from({ length: 12 }, (_, i) => String(i + 1));
+const PAYMENT_PLAN_OPTIONS = ["10/90", "20/80", "30/70", "40/60", "50/50", "60/40", "Post-handover"];
 
 const PORTALS = [
   { id: "property-finder", name: "Property Finder", color: "bg-red-500" },
@@ -39,6 +41,91 @@ const PORTALS = [
   { id: "kaya-website", name: "KAYA Website", color: "bg-kaya-olive" },
 ];
 
+// Amenities with portal compatibility: pf = PropertyFinder, bd = Bayut/Dubizzle
+const AMENITIES_LIST: { name: string; pf?: string; bd?: string }[] = [
+  { name: "Study", pf: "Study", bd: undefined },
+  { name: "Private Garden", pf: "Private Garden", bd: "Lawn or Garden" },
+  { name: "Security", pf: "Security", bd: "Security" },
+  { name: "Maids Room", pf: "Maids Room", bd: "Maids Room" },
+  { name: "Pets Allowed", pf: "Pets Allowed", bd: "Pets Allowed" },
+  { name: "Private Pool", pf: "Private Pool", bd: "Private Pool" },
+  { name: "Children's Play Area", pf: "Children's Play Area", bd: "Kids Play Area" },
+  { name: "Covered Parking", pf: "Covered Parking", bd: "Covered Parking" },
+  { name: "Barbecue Area", pf: "Barbecue Area", bd: "Barbecue Area" },
+  { name: "Lobby in Building", pf: "Lobby in Building", bd: "Lobby in Building" },
+  { name: "Balcony", pf: "Balcony", bd: "Balcony or Terrace" },
+  { name: "Private Jacuzzi", pf: "Private Jacuzzi", bd: "Jacuzzi" },
+  { name: "Central A/C & Heating", pf: "Central A/C & Heating", bd: "Central A/C" },
+  { name: "Private Gym", pf: undefined, bd: undefined },
+  { name: "Shared Pool", pf: undefined, bd: undefined },
+  { name: "Pantry", pf: undefined, bd: undefined },
+  { name: "Mezzanine", pf: undefined, bd: undefined },
+  { name: "Available Networked", pf: undefined, bd: undefined },
+  { name: "Dinning in Building", pf: undefined, bd: undefined },
+  { name: "Conference Room", pf: undefined, bd: undefined },
+  { name: "Shared Spa", pf: undefined, bd: undefined },
+  { name: "Shared Gym", pf: undefined, bd: undefined },
+  { name: "Concierge Service", pf: undefined, bd: undefined },
+  { name: "Maid Service", pf: undefined, bd: undefined },
+  { name: "Built in Wardrobes", pf: undefined, bd: undefined },
+  { name: "Walk-in Closet", pf: undefined, bd: undefined },
+  { name: "Built in Kitchen Appliances", pf: undefined, bd: undefined },
+  { name: "View of Water", pf: undefined, bd: undefined },
+  { name: "View of Landmark", pf: undefined, bd: undefined },
+  { name: "Vast-compliant", pf: undefined, bd: undefined },
+  { name: "Children's Pool", pf: undefined, bd: undefined },
+  { name: "Waste Disposal", pf: undefined, bd: undefined },
+  { name: "Maintenance Staff", pf: undefined, bd: undefined },
+  { name: "Reception/Waiting Room", pf: undefined, bd: undefined },
+  { name: "Storage Room", pf: undefined, bd: undefined },
+  { name: "Laundry Service", pf: undefined, bd: undefined },
+  { name: "Broadband Ready", pf: undefined, bd: undefined },
+  { name: "Business Center", pf: undefined, bd: undefined },
+  { name: "Service Elevators", pf: undefined, bd: undefined },
+  { name: "Satellite/Cable TV", pf: undefined, bd: undefined },
+  { name: "Intercom", pf: undefined, bd: undefined },
+  { name: "Gym", pf: undefined, bd: undefined },
+  { name: "Gymnasium", pf: undefined, bd: undefined },
+  { name: "Sauna", pf: undefined, bd: undefined },
+  { name: "BBQ Area", pf: undefined, bd: undefined },
+  { name: "Near Mall", pf: undefined, bd: undefined },
+  { name: "Steam Room", pf: undefined, bd: undefined },
+  { name: "Near School", pf: undefined, bd: undefined },
+  { name: "Near Hospital", pf: undefined, bd: undefined },
+  { name: "Swimming Pool", pf: undefined, bd: undefined },
+  { name: "Community View", pf: undefined, bd: undefined },
+  { name: "Fitness Center", pf: undefined, bd: undefined },
+  { name: "Part Furnished", pf: undefined, bd: undefined },
+  { name: "Public Parking", pf: undefined, bd: undefined },
+  { name: "Central Heating", pf: undefined, bd: undefined },
+  { name: "Parking Spaces", pf: undefined, bd: undefined },
+  { name: "Bank/ATM Facility", pf: undefined, bd: undefined },
+  { name: "24 Hours Concierge", pf: undefined, bd: undefined },
+  { name: "Near to Shopping Mall", pf: undefined, bd: undefined },
+  { name: "Security Staff", pf: undefined, bd: undefined },
+  { name: "Gym or Health Club", pf: undefined, bd: undefined },
+  { name: "Laundry Room", pf: undefined, bd: undefined },
+  { name: "Broadband Internet", pf: undefined, bd: undefined },
+  { name: "Storage Areas", pf: undefined, bd: undefined },
+  { name: "First Aid Medical Center", pf: undefined, bd: undefined },
+  { name: "Facilities for Disabled", pf: undefined, bd: undefined },
+  { name: "Electricity Backup", pf: undefined, bd: undefined },
+  { name: "Double Glazed Windows", pf: undefined, bd: undefined },
+  { name: "Cafeteria or Canteen", pf: undefined, bd: undefined },
+  { name: "Day Care Center", pf: undefined, bd: undefined },
+  { name: "Nearby Public Transport", pf: undefined, bd: undefined },
+  { name: "Centrally Air-Conditioned", pf: undefined, bd: undefined },
+];
+
+// Mock owners data
+const MOCK_OWNERS = [
+  { id: "1", name: "Ahmed Al Maktoum", email: "ahmed@example.com", phone: "+971501234567", nationality: "UAE" },
+  { id: "2", name: "Sarah Johnson", email: "sarah@example.com", phone: "+971502345678", nationality: "UK" },
+  { id: "3", name: "Mohammad Ali", email: "mohammad@example.com", phone: "+971503456789", nationality: "Pakistan" },
+  { id: "4", name: "Elena Petrova", email: "elena@example.com", phone: "+971504567890", nationality: "Russia" },
+  { id: "5", name: "John Smith", email: "john@example.com", phone: "+971505678901", nationality: "USA" },
+];
+
 const TABS = [
   { key: "info", label: "Information", icon: Info },
   { key: "desc", label: "Description", icon: FileText },
@@ -47,6 +134,14 @@ const TABS = [
 ] as const;
 
 type TabKey = typeof TABS[number]["key"];
+
+interface OwnerData {
+  id?: string;
+  name: string;
+  email: string;
+  phone: string;
+  nationality: string;
+}
 
 const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
   const [activeTab, setActiveTab] = useState<TabKey>("info");
@@ -77,6 +172,15 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
   const [price, setPrice] = useState("");
   const [cheques, setCheques] = useState("1");
   const [deposit, setDeposit] = useState("");
+  const [paymentPlan, setPaymentPlan] = useState("");
+
+  // Owner state
+  const [selectedOwner, setSelectedOwner] = useState<OwnerData | null>(null);
+  const [showSelectOwner, setShowSelectOwner] = useState(false);
+  const [showAddOwner, setShowAddOwner] = useState(false);
+  const [showOwnerForm, setShowOwnerForm] = useState(false);
+  const [ownerSearch, setOwnerSearch] = useState("");
+  const [newOwner, setNewOwner] = useState<OwnerData>({ name: "", email: "", phone: "", nationality: "" });
 
   // Description state
   const [title, setTitle] = useState("");
@@ -92,6 +196,9 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
 
   // Portals state
   const [selectedPortals, setSelectedPortals] = useState<string[]>([]);
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>([]);
+  const [showAmenitiesModal, setShowAmenitiesModal] = useState(false);
+  const [tempAmenities, setTempAmenities] = useState<string[]>([]);
 
   // Validation
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -115,6 +222,11 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
   };
 
   const tabIndex = TABS.findIndex((t) => t.key === activeTab);
+
+  const handleTabClick = (key: TabKey) => {
+    setErrors({});
+    setActiveTab(key);
+  };
 
   const goNext = () => {
     if (activeTab === "info" && !validateInfo()) return;
@@ -151,6 +263,44 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
       prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]
     );
   };
+
+  const handleSelectOwner = (owner: OwnerData) => {
+    setSelectedOwner(owner);
+    setShowSelectOwner(false);
+  };
+
+  const handleAddNewOwner = () => {
+    if (!newOwner.name.trim() || !newOwner.phone.trim()) return;
+    setSelectedOwner({ ...newOwner, id: `new-${Date.now()}` });
+    setNewOwner({ name: "", email: "", phone: "", nationality: "" });
+    setShowAddOwner(false);
+  };
+
+  const openAmenitiesModal = () => {
+    setTempAmenities([...selectedAmenities]);
+    setShowAmenitiesModal(true);
+  };
+
+  const toggleTempAmenity = (name: string) => {
+    setTempAmenities((prev) =>
+      prev.includes(name) ? prev.filter((a) => a !== name) : [...prev, name]
+    );
+  };
+
+  const saveAmenities = () => {
+    setSelectedAmenities([...tempAmenities]);
+    setShowAmenitiesModal(false);
+  };
+
+  const removeAmenity = (name: string) => {
+    setSelectedAmenities((prev) => prev.filter((a) => a !== name));
+  };
+
+  const filteredOwners = MOCK_OWNERS.filter((o) =>
+    o.name.toLowerCase().includes(ownerSearch.toLowerCase()) ||
+    o.email.toLowerCase().includes(ownerSearch.toLowerCase()) ||
+    o.phone.includes(ownerSearch)
+  );
 
   const label = type === "RENT" ? "Rent" : "Sell";
 
@@ -195,17 +345,15 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
       {/* Tab Nav */}
       <div className="bg-card border border-border rounded-xl overflow-hidden">
         <div className="flex border-b border-border">
-          {TABS.map((tab, idx) => {
+          {TABS.map((tab) => {
             const Icon = tab.icon;
             const active = activeTab === tab.key;
             return (
               <button
                 key={tab.key}
-                onClick={() => {
-                  if (idx <= tabIndex) { setErrors({}); setActiveTab(tab.key); }
-                }}
+                onClick={() => handleTabClick(tab.key)}
                 className={cn(
-                  "flex-1 flex items-center justify-center gap-2 px-4 py-3.5 font-raleway text-xs font-medium transition-colors border-b-2",
+                  "flex-1 flex items-center justify-center gap-2 px-4 py-3.5 font-raleway text-xs font-medium transition-colors border-b-2 cursor-pointer",
                   active
                     ? "border-kaya-olive text-foreground bg-kaya-olive/5"
                     : "border-transparent text-muted-foreground hover:text-foreground hover:bg-muted/30"
@@ -235,11 +383,11 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
                   <label className="block font-raleway text-xs text-muted-foreground uppercase tracking-wide mb-2">Listing ID</label>
                   <div className="flex items-center gap-4 mb-2">
                     <label className="flex items-center gap-2 font-raleway text-xs cursor-pointer">
-                      <input type="radio" name="listingIdMode" checked={listingIdMode === "auto"} onChange={() => setListingIdMode("auto")} className="accent-kaya-olive" />
+                      <input type="radio" name="listingIdMode" checked={listingIdMode === "auto"} onChange={() => setListingIdMode("auto")} className="accent-[hsl(var(--kaya-olive))]" />
                       Auto Generate
                     </label>
                     <label className="flex items-center gap-2 font-raleway text-xs cursor-pointer">
-                      <input type="radio" name="listingIdMode" checked={listingIdMode === "custom"} onChange={() => setListingIdMode("custom")} className="accent-kaya-olive" />
+                      <input type="radio" name="listingIdMode" checked={listingIdMode === "custom"} onChange={() => setListingIdMode("custom")} className="accent-[hsl(var(--kaya-olive))]" />
                       Custom
                     </label>
                   </div>
@@ -278,14 +426,27 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
               {/* Owner Info */}
               <div>
                 <label className="block font-raleway text-xs text-muted-foreground uppercase tracking-wide mb-2">Owner Info</label>
+                {selectedOwner && (
+                  <div className="mb-3 p-3 bg-kaya-olive/5 border border-kaya-olive/20 rounded-xl">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-raleway text-sm font-medium text-foreground">{selectedOwner.name}</span>
+                      <button onClick={() => setSelectedOwner(null)} className="text-muted-foreground hover:text-destructive"><X size={14} /></button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 text-[11px] font-raleway text-muted-foreground">
+                      <span>{selectedOwner.email}</span>
+                      <span>{selectedOwner.phone}</span>
+                      <span>{selectedOwner.nationality}</span>
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-2">
-                  <button className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg font-raleway text-xs hover:bg-muted/30 transition-colors">
+                  <button onClick={() => setShowSelectOwner(true)} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg font-raleway text-xs hover:bg-muted/30 transition-colors">
                     <User size={14} /> Select Owner
                   </button>
-                  <button className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg font-raleway text-xs hover:bg-muted/30 transition-colors">
+                  <button onClick={() => setShowAddOwner(true)} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg font-raleway text-xs hover:bg-muted/30 transition-colors">
                     <UserPlus size={14} /> Add Owner
                   </button>
-                  <button className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg font-raleway text-xs hover:bg-muted/30 transition-colors">
+                  <button onClick={() => setShowOwnerForm(true)} className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg font-raleway text-xs hover:bg-muted/30 transition-colors">
                     <FileInput size={14} /> Form
                   </button>
                 </div>
@@ -369,19 +530,28 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
                       )}
                     </select>
                   </FormField>
-                  <FormField label="Price (AED)">
+                  <FormField label={type === "RENT" ? "Price (AED)" : "Sale Price (AED)"}>
                     <input type="number" value={price} onChange={(e) => setPrice(e.target.value)} placeholder="0" className="crm-input" />
                   </FormField>
-                  {type === "RENT" && (
-                    <FormField label="Cheques">
-                      <select value={cheques} onChange={(e) => setCheques(e.target.value)} className="crm-input">
-                        {CHEQUE_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                  {type === "RENT" ? (
+                    <>
+                      <FormField label="Cheques">
+                        <select value={cheques} onChange={(e) => setCheques(e.target.value)} className="crm-input">
+                          {CHEQUE_OPTIONS.map((c) => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </FormField>
+                      <FormField label="Deposit (AED)">
+                        <input type="number" value={deposit} onChange={(e) => setDeposit(e.target.value)} placeholder="0" className="crm-input" />
+                      </FormField>
+                    </>
+                  ) : (
+                    <FormField label="Payment Plan">
+                      <select value={paymentPlan} onChange={(e) => setPaymentPlan(e.target.value)} className="crm-input">
+                        <option value="">Select</option>
+                        {PAYMENT_PLAN_OPTIONS.map((p) => <option key={p} value={p}>{p}</option>)}
                       </select>
                     </FormField>
                   )}
-                  <FormField label="Deposit (AED)">
-                    <input type="number" value={deposit} onChange={(e) => setDeposit(e.target.value)} placeholder="0" className="crm-input" />
-                  </FormField>
                 </div>
               </div>
             </div>
@@ -409,7 +579,6 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
           {/* STEP 3: Media & Documents */}
           {activeTab === "media" && (
             <div className="space-y-6 animate-fade-in">
-              {/* Images */}
               <div>
                 <label className="block font-raleway text-xs text-muted-foreground uppercase tracking-wide mb-2">Images</label>
                 <div
@@ -440,7 +609,6 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
                 )}
               </div>
 
-              {/* Owner Docs */}
               <div>
                 <label className="block font-raleway text-xs text-muted-foreground uppercase tracking-wide mb-2">Owner Docs <span className="text-muted-foreground/60">(Optional)</span></label>
                 <div
@@ -464,7 +632,6 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
                 )}
               </div>
 
-              {/* Video Link */}
               <FormField label="Video Link (Optional)">
                 <div className="relative">
                   <Link size={14} className="absolute left-3 top-3 text-muted-foreground" />
@@ -472,7 +639,6 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
                 </div>
               </FormField>
 
-              {/* View 360 */}
               <FormField label="View 360 (Optional)">
                 <div className="relative">
                   <Link size={14} className="absolute left-3 top-3 text-muted-foreground" />
@@ -484,35 +650,54 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
 
           {/* STEP 4: Portals */}
           {activeTab === "portals" && (
-            <div className="space-y-5 animate-fade-in">
+            <div className="space-y-6 animate-fade-in">
               <p className="font-raleway text-sm text-muted-foreground">Select portals to publish this listing:</p>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              <div className="flex flex-wrap gap-4 items-center">
                 {PORTALS.map((portal) => {
                   const selected = selectedPortals.includes(portal.id);
                   return (
-                    <button
-                      key={portal.id}
-                      onClick={() => togglePortal(portal.id)}
-                      className={cn(
-                        "flex items-center gap-3 px-4 py-3.5 rounded-xl border-2 transition-all font-raleway text-sm",
-                        selected
-                          ? "border-kaya-olive bg-kaya-olive/5 text-foreground"
-                          : "border-border bg-card text-muted-foreground hover:border-border/80 hover:bg-muted/20"
-                      )}
-                    >
-                      <div className={cn("w-8 h-8 rounded-lg flex items-center justify-center text-white text-[10px] font-bold", portal.color)}>
+                    <div key={portal.id} className="flex items-center gap-2">
+                      <button
+                        onClick={() => togglePortal(portal.id)}
+                        className={cn(
+                          "relative w-10 h-5 rounded-full transition-colors",
+                          selected ? "bg-kaya-olive" : "bg-muted"
+                        )}
+                      >
+                        <span className={cn(
+                          "absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform",
+                          selected ? "left-5" : "left-0.5"
+                        )} />
+                      </button>
+                      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center text-white text-[10px] font-bold border", portal.color)}>
                         {portal.name.charAt(0)}
                       </div>
-                      <span className="flex-1 text-left text-xs font-medium">{portal.name}</span>
-                      <div className={cn(
-                        "w-5 h-5 rounded border-2 flex items-center justify-center transition-colors",
-                        selected ? "bg-kaya-olive border-kaya-olive" : "border-border"
-                      )}>
-                        {selected && <CheckSquare size={12} className="text-primary-foreground" />}
-                      </div>
-                    </button>
+                    </div>
                   );
                 })}
+              </div>
+
+              {/* Amenities Section */}
+              <div className="border-t border-border pt-5">
+                <div className="flex items-center gap-4 mb-3">
+                  <span className="font-raleway text-sm font-medium text-foreground">Amenities</span>
+                  {selectedAmenities.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {selectedAmenities.map((amenity) => (
+                        <span key={amenity} className="inline-flex items-center gap-1 px-3 py-1 rounded-full border border-kaya-olive/30 bg-kaya-olive/5 font-raleway text-xs text-foreground">
+                          {amenity}
+                          <button onClick={() => removeAmenity(amenity)} className="text-muted-foreground hover:text-destructive ml-1"><X size={10} /></button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  <button
+                    onClick={openAmenitiesModal}
+                    className="flex items-center gap-2 px-4 py-2 border border-border rounded-full font-raleway text-xs hover:bg-muted/30 transition-colors"
+                  >
+                    <Plus size={12} /> Add Amenities
+                  </button>
+                </div>
               </div>
             </div>
           )}
@@ -546,6 +731,148 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
           )}
         </div>
       </div>
+
+      {/* Select Owner Modal */}
+      <Dialog open={showSelectOwner} onOpenChange={setShowSelectOwner}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="font-raleway">Select Owner</DialogTitle>
+          </DialogHeader>
+          <div className="relative mb-3">
+            <Search size={14} className="absolute left-3 top-3 text-muted-foreground" />
+            <input
+              type="text"
+              value={ownerSearch}
+              onChange={(e) => setOwnerSearch(e.target.value)}
+              placeholder="Search by name, email or phone..."
+              className="crm-input pl-9"
+            />
+          </div>
+          <div className="max-h-64 overflow-y-auto space-y-1">
+            {filteredOwners.map((owner) => (
+              <button
+                key={owner.id}
+                onClick={() => handleSelectOwner(owner)}
+                className={cn(
+                  "w-full text-left px-4 py-3 rounded-lg transition-colors hover:bg-kaya-olive/5 border border-transparent hover:border-kaya-olive/20",
+                  selectedOwner?.id === owner.id && "bg-kaya-olive/10 border-kaya-olive/30"
+                )}
+              >
+                <p className="font-raleway text-sm font-medium text-foreground">{owner.name}</p>
+                <p className="font-raleway text-[11px] text-muted-foreground">{owner.email} • {owner.phone} • {owner.nationality}</p>
+              </button>
+            ))}
+            {filteredOwners.length === 0 && (
+              <p className="font-raleway text-xs text-muted-foreground text-center py-6">No owners found</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Owner Modal */}
+      <Dialog open={showAddOwner} onOpenChange={setShowAddOwner}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-raleway">Add New Owner</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <FormField label="Name *">
+              <input type="text" value={newOwner.name} onChange={(e) => setNewOwner({ ...newOwner, name: e.target.value })} placeholder="Full name" className="crm-input" />
+            </FormField>
+            <FormField label="Email">
+              <input type="email" value={newOwner.email} onChange={(e) => setNewOwner({ ...newOwner, email: e.target.value })} placeholder="Email" className="crm-input" />
+            </FormField>
+            <FormField label="Phone *">
+              <input type="tel" value={newOwner.phone} onChange={(e) => setNewOwner({ ...newOwner, phone: e.target.value })} placeholder="+971..." className="crm-input" />
+            </FormField>
+            <FormField label="Nationality">
+              <input type="text" value={newOwner.nationality} onChange={(e) => setNewOwner({ ...newOwner, nationality: e.target.value })} placeholder="Nationality" className="crm-input" />
+            </FormField>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setShowAddOwner(false)} className="px-4 py-2 border border-border rounded-lg font-raleway text-xs hover:bg-muted/30">Cancel</button>
+              <button onClick={handleAddNewOwner} className="px-4 py-2 bg-kaya-olive text-primary-foreground rounded-lg font-raleway text-xs hover:bg-kaya-olive/90">Save Owner</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Owner Form Modal (inline entry) */}
+      <Dialog open={showOwnerForm} onOpenChange={setShowOwnerForm}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="font-raleway">Owner Details Form</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <FormField label="Owner Name">
+              <input type="text" value={selectedOwner?.name || ""} onChange={(e) => setSelectedOwner((prev) => prev ? { ...prev, name: e.target.value } : { name: e.target.value, email: "", phone: "", nationality: "" })} placeholder="Full name" className="crm-input" />
+            </FormField>
+            <FormField label="Email">
+              <input type="email" value={selectedOwner?.email || ""} onChange={(e) => setSelectedOwner((prev) => prev ? { ...prev, email: e.target.value } : { name: "", email: e.target.value, phone: "", nationality: "" })} placeholder="Email" className="crm-input" />
+            </FormField>
+            <FormField label="Phone">
+              <input type="tel" value={selectedOwner?.phone || ""} onChange={(e) => setSelectedOwner((prev) => prev ? { ...prev, phone: e.target.value } : { name: "", email: "", phone: e.target.value, nationality: "" })} placeholder="Phone" className="crm-input" />
+            </FormField>
+            <FormField label="Nationality">
+              <input type="text" value={selectedOwner?.nationality || ""} onChange={(e) => setSelectedOwner((prev) => prev ? { ...prev, nationality: e.target.value } : { name: "", email: "", phone: "", nationality: e.target.value })} placeholder="Nationality" className="crm-input" />
+            </FormField>
+            <div className="flex justify-end gap-2 pt-2">
+              <button onClick={() => setShowOwnerForm(false)} className="px-4 py-2 border border-border rounded-lg font-raleway text-xs hover:bg-muted/30">Close</button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Amenities Modal */}
+      <Dialog open={showAmenitiesModal} onOpenChange={setShowAmenitiesModal}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="font-raleway">Amenities</DialogTitle>
+              <div className="font-raleway text-xs text-muted-foreground">
+                Notice: <span className="text-red-500 font-medium">Red</span> for PropertyFinder &nbsp;&nbsp; <span className="text-green-500 font-medium">Green</span> for Dubizzle/Bayut
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="flex flex-wrap gap-2 py-4">
+            {AMENITIES_LIST.map((amenity) => {
+              const isSelected = tempAmenities.includes(amenity.name);
+              const hasPf = !!amenity.pf;
+              const hasBd = !!amenity.bd;
+
+              return (
+                <button
+                  key={amenity.name}
+                  onClick={() => toggleTempAmenity(amenity.name)}
+                  className={cn(
+                    "px-3 py-1.5 rounded-full border font-raleway text-xs transition-all",
+                    isSelected
+                      ? "border-kaya-olive bg-kaya-olive/10 ring-1 ring-kaya-olive/30"
+                      : "border-border hover:border-muted-foreground/40"
+                  )}
+                >
+                  {hasPf && hasBd ? (
+                    <span>
+                      <span className="text-red-500">{amenity.pf}</span>
+                      {" / "}
+                      <span className="text-green-500">{amenity.bd}</span>
+                    </span>
+                  ) : hasPf ? (
+                    <span className="text-red-500">{amenity.pf}</span>
+                  ) : hasBd ? (
+                    <span className="text-green-500">{amenity.bd}</span>
+                  ) : (
+                    <span className="text-foreground">{amenity.name}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+          <div className="flex justify-end gap-2 pt-2 border-t border-border">
+            <button onClick={() => setShowAmenitiesModal(false)} className="px-4 py-2 border border-border rounded-lg font-raleway text-xs hover:bg-muted/30">Cancel</button>
+            <button onClick={saveAmenities} className="px-4 py-2 bg-kaya-olive text-primary-foreground rounded-lg font-raleway text-xs hover:bg-kaya-olive/90">Save Amenities</button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
