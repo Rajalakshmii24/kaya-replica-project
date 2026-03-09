@@ -5,6 +5,7 @@ import DashboardView from "./views/DashboardView";
 import AreasView from "./views/AreasView";
 import DevelopersView from "./views/DevelopersView";
 import NewProjectsView from "./views/NewProjectsView";
+import AddNewProjectForm from "./views/AddNewProjectForm";
 import SellListingsView from "./views/SellListingsView";
 import RentListingsView from "./views/RentListingsView";
 import AddListingForm from "./views/AddListingForm";
