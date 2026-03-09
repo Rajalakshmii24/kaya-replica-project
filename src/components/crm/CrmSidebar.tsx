@@ -6,7 +6,7 @@ import {
 import { useState } from "react";
 
 export type CrmModule =
-  | "dashboard" | "areas" | "developers" | "new-projects"
+  | "dashboard" | "areas" | "developers" | "new-projects" | "new-projects-add"
   | "sell-listings" | "sell-listings-add" | "rent-listings" | "rent-listings-add" | "owners"
   | "leads" | "leads-buy" | "leads-rent" | "leads-portals" | "leads-add"
   | "database" | "transactions" | "transactions-add"
@@ -25,7 +25,13 @@ const sidebarItems: SidebarItem[] = [
   { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
   { key: "areas", label: "Areas", icon: <MapPin size={18} /> },
   { key: "developers", label: "Developers", icon: <Building size={18} /> },
-  { key: "new-projects", label: "New Projects", icon: <FolderPlus size={18} /> },
+  {
+    key: "new-projects", label: "New Projects", icon: <FolderPlus size={18} />,
+    children: [
+      { key: "new-projects", label: "New Project List" },
+      { key: "new-projects-add", label: "Add New Project" },
+    ],
+  },
   {
     key: "sell-listings", label: "Sell Listings", icon: <Tag size={18} />,
     children: [
