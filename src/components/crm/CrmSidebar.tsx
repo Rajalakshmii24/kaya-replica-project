@@ -6,7 +6,7 @@ import {
 import { useState } from "react";
 
 export type CrmModule =
-  | "dashboard" | "areas" | "developers" | "new-projects"
+  | "dashboard" | "areas" | "developers" | "new-projects" | "new-projects-add"
   | "sell-listings" | "sell-listings-add" | "rent-listings" | "rent-listings-add" | "owners"
   | "leads" | "leads-buy" | "leads-rent" | "leads-portals" | "leads-add"
   | "database" | "transactions" | "transactions-add"
