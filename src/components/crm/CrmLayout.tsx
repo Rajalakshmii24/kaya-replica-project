@@ -32,7 +32,8 @@ const CrmLayout = ({ onLogout, userEmail }: CrmLayoutProps) => {
       case "dashboard": return <DashboardView onNavigate={setActiveModule} />;
       case "areas": return <AreasView />;
       case "developers": return <DevelopersView />;
-      case "new-projects": return <NewProjectsView />;
+      case "new-projects": return <NewProjectsView onNavigate={setActiveModule} />;
+      case "new-projects-add": return <AddNewProjectForm onSave={() => setActiveModule("new-projects")} onCancel={() => setActiveModule("new-projects")} />;
       case "sell-listings": return <SellListingsView onNavigate={setActiveModule} />;
       case "sell-listings-add": return <AddListingForm type="SELL" onSave={() => setActiveModule("sell-listings")} onCancel={() => setActiveModule("sell-listings")} />;
       case "rent-listings": return <RentListingsView onNavigate={setActiveModule} />;
