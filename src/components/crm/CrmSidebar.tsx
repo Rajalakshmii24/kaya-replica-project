@@ -1,17 +1,26 @@
 import {
   LayoutDashboard, MapPin, Building, FolderPlus, Tag, Home,
-  Users, UserPlus, Database, Receipt, BarChart3, User,
-  CalendarDays, Settings, ChevronDown, ChevronRight, HelpCircle, Plus,
+  Users, UserPlus, Database, Receipt, BarChart3,
+  CalendarDays, ChevronDown, ChevronRight, HelpCircle, Plus, Shield,
 } from "lucide-react";
 import { useState } from "react";
 
 export type CrmModule =
-  | "dashboard" | "areas" | "developers" | "new-projects" | "new-projects-add"
-  | "sell-listings" | "sell-listings-add" | "rent-listings" | "rent-listings-add" | "owners"
+  | "dashboard"
+  | "areas" | "areas-list"
+  | "developers" | "developers-list"
+  | "new-projects" | "new-projects-add"
+  | "sell-listings" | "sell-listings-add"
+  | "rent-listings" | "rent-listings-add"
+  | "owners"
   | "leads" | "leads-buy" | "leads-rent" | "leads-portals" | "leads-add"
-  | "database" | "transactions" | "transactions-add"
+  | "database"
+  | "transactions" | "transactions-add"
   | "kpi-contacts" | "kpi-viewings" | "kpi-insight"
-  | "agents" | "calendar" | "settings";
+  | "calendar"
+  | "admin" | "admin-staff" | "admin-permissions" | "admin-teams" | "admin-roles"
+  | "admin-watermark" | "admin-integrations" | "admin-data-import"
+  | "admin-activity-log" | "admin-customized-fields" | "admin-locations";
 
 interface SidebarItem {
   key: CrmModule;
@@ -23,8 +32,18 @@ interface SidebarItem {
 
 const sidebarItems: SidebarItem[] = [
   { key: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
-  { key: "areas", label: "Areas", icon: <MapPin size={18} /> },
-  { key: "developers", label: "Developers", icon: <Building size={18} /> },
+  {
+    key: "areas", label: "Areas", icon: <MapPin size={18} />,
+    children: [
+      { key: "areas-list", label: "Areas List" },
+    ],
+  },
+  {
+    key: "developers", label: "Developers", icon: <Building size={18} />,
+    children: [
+      { key: "developers-list", label: "Developers List" },
+    ],
+  },
   {
     key: "new-projects", label: "New Projects", icon: <FolderPlus size={18} />,
     children: [
@@ -77,9 +96,22 @@ const sidebarItems: SidebarItem[] = [
       { key: "kpi-insight", label: "Insight Board" },
     ],
   },
-  { key: "agents", label: "Agents", icon: <User size={18} /> },
   { key: "calendar", label: "Calendar", icon: <CalendarDays size={18} /> },
-  { key: "settings", label: "Settings", icon: <Settings size={18} /> },
+  {
+    key: "admin", label: "Admin", icon: <Shield size={18} />,
+    children: [
+      { key: "admin-staff", label: "Staff" },
+      { key: "admin-permissions", label: "Permissions" },
+      { key: "admin-teams", label: "Teams" },
+      { key: "admin-roles", label: "Roles" },
+      { key: "admin-watermark", label: "Watermark" },
+      { key: "admin-integrations", label: "Integrations" },
+      { key: "admin-data-import", label: "Data Import" },
+      { key: "admin-activity-log", label: "Activity Log" },
+      { key: "admin-customized-fields", label: "Customized Fields" },
+      { key: "admin-locations", label: "Locations" },
+    ],
+  },
 ];
 
 interface CrmSidebarProps {
