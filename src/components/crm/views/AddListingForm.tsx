@@ -4,7 +4,7 @@ import {
   MapPin, User, UserPlus, FileInput, Calendar as CalendarIcon,
   Upload, X, Link, CheckSquare, Loader2, Home as HomeIcon, Plus, Search,
 } from "lucide-react";
-import usePlacesAutocomplete, {getGeocode, getLatLng,} from "use-places-autocomplete";
+// Location autocomplete handled inline
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";

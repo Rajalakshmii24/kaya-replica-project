@@ -14,9 +14,8 @@ import LeadsView from "./views/LeadsView";
 import DatabaseView from "./views/DatabaseView";
 import TransactionsView from "./views/TransactionsView";
 import KpiReportsView from "./views/KpiReportsView";
-import AgentsView from "./views/AgentsView";
 import CalendarView from "./views/CalendarView";
-import SettingsView from "./views/SettingsView";
+import AdminView from "./views/AdminView";
 
 interface CrmLayoutProps {
   onLogout: () => void;
@@ -26,13 +25,22 @@ interface CrmLayoutProps {
 const CrmLayout = ({ onLogout, userEmail }: CrmLayoutProps) => {
   const [activeModule, setActiveModule] = useState<CrmModule>("dashboard");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [filterContext, setFilterContext] = useState<{ type: "area" | "developer"; value: string } | null>(null);
+
+  const navigateWithFilter = (module: CrmModule, filter?: { type: "area" | "developer"; value: string }) => {
+    if (filter) setFilterContext(filter);
+    else setFilterContext(null);
+    setActiveModule(module);
+  };
 
   const renderModule = () => {
     switch (activeModule) {
       case "dashboard": return <DashboardView onNavigate={setActiveModule} />;
-      case "areas": return <AreasView />;
-      case "developers": return <DevelopersView />;
-      case "new-projects": return <NewProjectsView onNavigate={setActiveModule} />;
+      case "areas":
+      case "areas-list": return <AreasView onNavigate={navigateWithFilter} />;
+      case "developers":
+      case "developers-list": return <DevelopersView onNavigate={navigateWithFilter} />;
+      case "new-projects": return <NewProjectsView onNavigate={setActiveModule} filterContext={filterContext} />;
       case "new-projects-add": return <AddNewProjectForm onSave={() => setActiveModule("new-projects")} onCancel={() => setActiveModule("new-projects")} />;
       case "sell-listings": return <SellListingsView onNavigate={setActiveModule} />;
       case "sell-listings-add": return <AddListingForm type="SELL" onSave={() => setActiveModule("sell-listings")} onCancel={() => setActiveModule("sell-listings")} />;
@@ -50,9 +58,18 @@ const CrmLayout = ({ onLogout, userEmail }: CrmLayoutProps) => {
       case "kpi-contacts": return <KpiReportsView initialTab="contacts" />;
       case "kpi-viewings": return <KpiReportsView initialTab="viewings" />;
       case "kpi-insight": return <KpiReportsView initialTab="insight" />;
-      case "agents": return <AgentsView />;
       case "calendar": return <CalendarView />;
-      case "settings": return <SettingsView />;
+      case "admin":
+      case "admin-staff": return <AdminView initialTab="staff" />;
+      case "admin-permissions": return <AdminView initialTab="permissions" />;
+      case "admin-teams": return <AdminView initialTab="teams" />;
+      case "admin-roles": return <AdminView initialTab="roles" />;
+      case "admin-watermark": return <AdminView initialTab="watermark" />;
+      case "admin-integrations": return <AdminView initialTab="integrations" />;
+      case "admin-data-import": return <AdminView initialTab="data-import" />;
+      case "admin-activity-log": return <AdminView initialTab="activity-log" />;
+      case "admin-customized-fields": return <AdminView initialTab="customized-fields" />;
+      case "admin-locations": return <AdminView initialTab="locations" />;
       default: return <DashboardView onNavigate={setActiveModule} />;
     }
   };
