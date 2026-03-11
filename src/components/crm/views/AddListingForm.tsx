@@ -4,6 +4,7 @@ import {
   MapPin, User, UserPlus, FileInput, Calendar as CalendarIcon,
   Upload, X, Link, CheckSquare, Loader2, Home as HomeIcon, Plus, Search,
 } from "lucide-react";
+import usePlacesAutocomplete, {getGeocode, getLatLng,} from "use-places-autocomplete";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -145,6 +146,7 @@ interface OwnerData {
 
 const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
   const [activeTab, setActiveTab] = useState<TabKey>("info");
+  const [isMapMaximized, setIsMapMaximized] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -372,7 +374,7 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
             <div className="space-y-6 animate-fade-in">
               {/* Type & Listing ID */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                <FormField label="Type" error={errors.propertyType}>
+                <FormField label="Property Type" error={errors.propertyType}>
                   <select value={propertyType} onChange={(e) => setPropertyType(e.target.value)} className="crm-input">
                     <option value="">Select Type</option>
                     {PROPERTY_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -405,21 +407,70 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
                 </div>
               </div>
 
-              {/* Location + Map */}
-              <div>
-                <label className="block font-raleway text-xs text-muted-foreground uppercase tracking-wide mb-2">Location</label>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              {/* Information Tab -> Location Section */}
+              <div className="space-y-4">
+                <FormField label="Location">
                   <div className="relative">
-                    <MapPin size={14} className="absolute left-3 top-3 text-muted-foreground" />
-                    <input type="text" value={location} onChange={(e) => setLocation(e.target.value)} placeholder="Enter location or click on map" className="crm-input pl-9" />
+                    <MapPin size={14} className="absolute left-3 top-3 text-muted-foreground z-10" />
+                    <input 
+                      type="text" 
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      placeholder="Search for community or location..." 
+                      className="crm-input pl-9" 
+                    />
+                    
+                    {/* Dropdown List: Only shows when user types and matches exist */}
+                    {location.length > 0 && (
+                      <div className="absolute z-50 w-full mt-1 bg-card border border-border rounded-lg shadow-xl max-h-60 overflow-auto">
+                        {["Jumeirah", "Business Bay", "Downtown Dubai", "Dubai Marina", "Palm Jumeirah"]
+                          .filter(item => item.toLowerCase().includes(location.toLowerCase()))
+                          .map((community) => (
+                            <button
+                              key={community}
+                              type="button"
+                              onClick={() => setLocation(community)}
+                              className="w-full text-left px-4 py-2.5 text-sm hover:bg-kaya-olive/10 transition-colors font-raleway border-b border-border last:border-0"
+                            >
+                              {community}
+                            </button>
+                          ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="h-48 bg-muted/50 border border-border rounded-xl flex items-center justify-center">
-                    <div className="text-center">
-                      <MapPin size={24} className="mx-auto text-muted-foreground mb-1" />
-                      <p className="font-raleway text-xs text-muted-foreground">Google Maps Integration</p>
-                      <p className="font-raleway text-[10px] text-muted-foreground mt-0.5">Click to pin location</p>
-                    </div>
+                </FormField>
+
+                {/* Functional Map Container  */}
+                <div className={cn(
+                  "relative rounded-xl overflow-hidden border border-border transition-all duration-300 bg-muted/30",
+                  isMapMaximized ? "fixed inset-0 z-[100] m-0 rounded-none h-screen w-screen" : "h-64"
+                )}>
+                  <div className="absolute top-3 right-3 z-[101] flex flex-col gap-2">
+                    <button 
+                      type="button" 
+                      onClick={() => setIsMapMaximized(!isMapMaximized)}
+                      className="p-2 bg-white rounded shadow-md hover:bg-gray-100 text-foreground"
+                    >
+                      {isMapMaximized ? <X size={18} /> : <Plus size={18} />}
+                    </button>
                   </div>
+                  
+                  {/* Use a valid Google Maps Embed URL or API Key */}
+                  <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d115512.11588825785!2d55.158485203308014!3d25.194689027878783!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3e5f43496ad9c645%3A0xbde66e5084295162!2sDubai!5e0!3m2!1sen!2sae!4v1709720000000!5m2!1sen!2sae" 
+                    className="w-full h-full border-0"
+                    allowFullScreen
+                    loading="lazy"
+                  />
+                  
+                  {isMapMaximized && (
+                    <button 
+                      onClick={() => setIsMapMaximized(false)}
+                      className="absolute bottom-10 left-1/2 -translate-x-1/2 bg-kaya-olive text-white px-6 py-2 rounded-full shadow-xl font-bold z-[102]"
+                    >
+                      Confirm Location & Close
+                    </button>
+                  )}
                 </div>
               </div>
 
@@ -435,6 +486,7 @@ const AddListingForm = ({ type, onSave, onCancel }: AddListingFormProps) => {
                     <div className="grid grid-cols-1 sm:grid-cols-3 gap-1 text-[11px] font-raleway text-muted-foreground">
                       <span>{selectedOwner.email}</span>
                       <span>{selectedOwner.phone}</span>
+                      
                       <span>{selectedOwner.nationality}</span>
                     </div>
                   </div>
